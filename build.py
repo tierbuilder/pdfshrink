@@ -28,7 +28,7 @@ CF_BEACON = os.environ.get("CF_BEACON_TOKEN", "")
 GOOGLE_VERIFY = os.environ.get("GOOGLE_VERIFY", "")
 BING_VERIFY = os.environ.get("BING_VERIFY", "")
 UPDATED = os.environ.get("UPDATED", date.today().isoformat())
-CONTACT = os.environ.get("CONTACT_EMAIL", "")
+CONTACT = os.environ.get("CONTACT_EMAIL", "online@gumber.ai")
 
 LOGO_SVG = ('<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#e5432d"/>'
             '<path d="M10 7h8l5 5v13a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="#fff"/>'
