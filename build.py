@@ -358,7 +358,7 @@ def main():
     ai_bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-User", "Claude-SearchBot", "anthropic-ai",
                "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot-Extended", "Bingbot", "CCBot",
                "meta-externalagent", "Amazonbot", "DuckAssistBot", "YouBot", "MistralAI-User"]
-    robots = "# Search engines and AI assistants are welcome.\nUser-agent: *\nAllow: /\nDisallow: /assets/\nDisallow: /vendor/\n\n"
+    robots = "# Search engines and AI assistants are welcome.\nUser-agent: *\nAllow: /\n\n"
     robots += "".join(f"User-agent: {b}\nAllow: /\n\n" for b in ai_bots)
     robots += f"Sitemap: {SITE_URL}/sitemap.xml\n"
     (DIST / "robots.txt").write_text(robots)
