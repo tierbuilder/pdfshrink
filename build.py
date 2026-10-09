@@ -21,7 +21,7 @@ ROOT = Path(__file__).parent
 DIST = ROOT / "dist"
 STATIC = ROOT / "static"
 
-SITE_URL = os.environ.get("SITE_URL", "https://pdfshrink.example").rstrip("/")
+SITE_URL = os.environ.get("SITE_URL", "https://pdfshrink.gumber.ai").rstrip("/")
 SITE_NAME = os.environ.get("SITE_NAME", "PDF Shrink")
 PLAUSIBLE = os.environ.get("PLAUSIBLE_DOMAIN", "")
 CF_BEACON = os.environ.get("CF_BEACON_TOKEN", "")
