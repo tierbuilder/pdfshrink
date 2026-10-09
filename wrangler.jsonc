@@ -11,7 +11,7 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/google377b9814c655af97.html"]
   },
   // Anonymous usage events (created automatically on first write; free plan: 100k/day).
   "analytics_engine_datasets": [

@@ -1,5 +1,5 @@
 // Edge Worker. Static files are served straight from dist/ (assets-first);
-// this code only runs for /api/* (see run_worker_first in wrangler.jsonc).
+// this code only runs for /api/* and verification files (see run_worker_first in wrangler.jsonc).
 //
 // POST /api/event — anonymous usage events from the tools, e.g.
 //   {"n":"compressed","u":"/compress-pdf-to-100kb/","p":{"mode":"target","method":"smart","hit":true,"saved":72}}
@@ -11,12 +11,20 @@ const EVENTS = new Set([
   'files_added', 'compressed', 'error', 'share', 'zip_download',
   'images_added', 'image_resized', 'merged', 'split', 'images_to_pdf', 'pdf_to_images',
 ]);
+// Search-engine ownership files, served verbatim. Cloudflare's clean-URL handling would
+// otherwise redirect *.html, which can make verification fail. Only these exact tokens.
+const VERIFY = {
+  '/google377b9814c655af97.html': 'google-site-verification: google377b9814c655af97.html',
+};
 const STR_KEYS = ['mode', 'method', 'msg'];
 const NUM_KEYS = ['saved', 'kb', 'count', 'pages', 'files', 'dpi'];
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (VERIFY[url.pathname]) {
+      return new Response(VERIFY[url.pathname], { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
     if (url.pathname === '/api/event') {
       if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'POST' } });
       return handleEvent(request, env, url);

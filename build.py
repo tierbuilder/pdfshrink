@@ -435,6 +435,9 @@ self.addEventListener('fetch', (e) => {{
         make_images()
     for f in BRAND.glob("*"):
         shutil.copy(f, DIST / f.name)
+    # Files that must live at the site root verbatim (e.g. search-engine verification).
+    for f in (STATIC / "root").glob("*"):
+        shutil.copy(f, DIST / f.name)
     print(f"Built {len(pages)} pages → {DIST}  (SITE_URL={SITE_URL})")
     if not CONTACT:
         print("WARNING: CONTACT_EMAIL is not set — required on Contact/Privacy/Terms before going live.")
