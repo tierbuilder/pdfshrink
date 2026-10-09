@@ -1,15 +1,22 @@
-// Cloudflare Workers static-assets config. The site is fully static:
-// `python3 build.py` writes dist/, and `npx wrangler deploy` uploads it.
+// Cloudflare Workers config. The site is static: `python3 build.py` writes dist/,
+// and `npx wrangler deploy` uploads it. worker/index.js runs only for /api/*.
 // "name" must match the Worker's name in the Cloudflare dashboard.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pdfshrink",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   },
+  // Anonymous usage events (created automatically on first write; free plan: 100k/day).
+  "analytics_engine_datasets": [
+    { "binding": "EVENTS", "dataset": "pdfshrink_events" }
+  ],
   "observability": {
     "logs": {
       "enabled": true,

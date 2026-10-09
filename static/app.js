@@ -11,7 +11,18 @@
   let mode = tool.dataset.mode || 'recommended';
   let busy = false;
 
+  function beacon(name, props) {
+    // First-party, cookie-less usage counts. Skipped for Do-Not-Track / Global Privacy Control and local dev.
+    try {
+      if (navigator.globalPrivacyControl || navigator.doNotTrack === '1' || /^(localhost|127\.|\[::1\])/.test(location.hostname)) return;
+      const body = JSON.stringify({ n: name, u: location.pathname, p: props || {} });
+      if (!(navigator.sendBeacon && navigator.sendBeacon('/api/event', body))) {
+        fetch('/api/event', { method: 'POST', body, keepalive: true }).catch(() => {});
+      }
+    } catch (e) { /* analytics is optional */ }
+  }
   const track = (name, props) => {
+    beacon(name, props);
     try {
       if (window.plausible) window.plausible(name, { props });
       if (window.gtag) window.gtag('event', name, props);

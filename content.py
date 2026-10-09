@@ -883,7 +883,7 @@ PRIVACY_PAGE.update(
     desc="Privacy policy: files are processed locally in your browser and never uploaded. No cookies. GDPR, CCPA and DPDP Act information.",
     facts=["Files you select are processed entirely in your browser and are never transmitted to us or anyone else.",
            "We set no cookies and run no advertising or cross-site tracking.",
-           "If analytics is enabled, it is cookie-less and aggregate (page views, anonymous events) — never file names or contents.",
+           "We count anonymous, cookie-less usage events (e.g. “a PDF was compressed”) — never files, file names or IP addresses. Do-Not-Track and Global Privacy Control are honoured.",
            "Contact for privacy requests: {{CONTACT}}."],
     body="""
 <h2>1. Files</h2><p>When you select a file, it is read into your browser's memory, processed there, and offered back
@@ -892,9 +892,15 @@ browser's developer tools (Network tab).</p>
 <h2>2. Data we collect</h2>
 <p><strong>Server logs:</strong> our hosting provider (a CDN) processes standard request data such as IP address,
 user agent and requested URL to deliver pages and protect against abuse, typically retained for a short period.</p>
-<p><strong>Analytics (if enabled):</strong> privacy-friendly, cookie-less analytics that count page views and
-anonymous events (for example “a PDF was compressed”, the chosen mode and whether a target size was met). No
-personal profiles are built and no data is sold or shared for advertising.</p>
+<p><strong>Usage events:</strong> when you use a tool, your browser sends an anonymous event to our own endpoint:
+the tool used (for example “a PDF was compressed”), the page, the settings chosen (such as the target size), the
+outcome (such as percentage saved, whether the target was met, or a short error type) and your approximate country
+as determined by our CDN. We do not store IP addresses, files, file names or any identifier, and events cannot be
+linked to each other or to you. They are kept for up to about 3 months in Cloudflare Workers Analytics Engine and
+briefly in Cloudflare's logs. If your browser sends a Do-Not-Track or Global Privacy Control signal, no events are
+sent at all.</p>
+<p><strong>Visit statistics (if enabled):</strong> Cloudflare Web Analytics counts page views without cookies or
+fingerprinting. No personal profiles are built and no data is sold or shared for advertising.</p>
 <h2>3. Cookies and local storage</h2><p>We don't use cookies. The browser caches the app's code (a service worker) so
 it works offline; it contains no personal data and can be cleared in your browser settings.</p>
 <h2>4. Legal basis and your rights</h2>

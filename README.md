@@ -119,3 +119,15 @@ Newer client-side competitors exist (BentoPDF, MiOffice), so privacy alone isn't
 
 Measure with Search Console. Expect size pages to start ranking in 4–12 weeks. Domain age and backlinks are the
 bottleneck, not on-page SEO.
+
+## Usage analytics (Cloudflare)
+
+- `worker/index.js` runs only for `/api/*`; every page and file is served straight from `dist/` as a static asset.
+- The tools send anonymous events (`compressed`, `image_resized`, `merged`, …) to `POST /api/event`. They go to
+  Workers Analytics Engine (dataset `pdfshrink_events`, kept about 3 months) and to Workers Logs. No files, file
+  names or IP addresses are sent. Do-Not-Track and Global Privacy Control are honoured, and nothing is sent from
+  localhost.
+- To read the stats:
+  `CF_ACCOUNT_ID=... CF_API_TOKEN=... python3 scripts/stats.py 7`
+  The token needs **Account Analytics: Read**.
+- Visit counts come from Cloudflare Web Analytics: Worker → Metrics → enable.
