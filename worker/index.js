@@ -3,7 +3,7 @@
 //
 // POST /api/event — anonymous usage events from the tools, e.g.
 //   {"n":"compressed","u":"/compress-pdf-to-100kb/","p":{"mode":"target","method":"smart","hit":true,"saved":72}}
-// Stored in Workers Analytics Engine (dataset pdfshrink_events) and echoed to Workers Logs.
+// Stored in Workers Analytics Engine (dataset pdfshrink) and echoed to Workers Logs.
 // Never receives files, file names or IP addresses; only the event, page path,
 // settings/outcome and Cloudflare's approximate country.
 

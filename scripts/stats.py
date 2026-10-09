@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print usage stats from Workers Analytics Engine (dataset pdfshrink_events).
+"""Print usage stats from Workers Analytics Engine (dataset pdfshrink).
 
     CF_ACCOUNT_ID=... CF_API_TOKEN=... python3 scripts/stats.py [days]
 
@@ -17,13 +17,13 @@ WHERE = f"timestamp > NOW() - INTERVAL '{DAYS}' DAY"
 N = "SUM(_sample_interval)"  # Analytics Engine samples at high volume; this re-weights counts
 
 QUERIES = {
-    "Events": f"SELECT blob1 AS event, {N} AS n FROM pdfshrink_events WHERE {WHERE} GROUP BY event ORDER BY n DESC",
-    "Pages where tools were used": f"SELECT blob2 AS page, {N} AS n FROM pdfshrink_events WHERE {WHERE} AND blob1 != 'files_added' AND blob1 != 'images_added' GROUP BY page ORDER BY n DESC LIMIT 15",
-    "PDF compress: mode / method": f"SELECT blob4 AS mode, blob5 AS method, {N} AS n, round(SUM(_sample_interval * double1) / SUM(_sample_interval)) AS avg_saved_pct FROM pdfshrink_events WHERE {WHERE} AND blob1 = 'compressed' GROUP BY mode, method ORDER BY n DESC",
-    "Exact-size hit rate (PDF + image)": f"SELECT blob1 AS event, blob6 AS hit, {N} AS n FROM pdfshrink_events WHERE {WHERE} AND blob6 != '' AND blob1 IN ('compressed', 'image_resized') GROUP BY event, hit ORDER BY event, hit",
-    "Image target sizes (KB)": f"SELECT double2 AS kb, {N} AS n FROM pdfshrink_events WHERE {WHERE} AND blob1 = 'image_resized' GROUP BY kb ORDER BY n DESC LIMIT 10",
-    "Countries": f"SELECT blob3 AS country, {N} AS n FROM pdfshrink_events WHERE {WHERE} GROUP BY country ORDER BY n DESC LIMIT 10",
-    "Errors": f"SELECT blob7 AS message, {N} AS n FROM pdfshrink_events WHERE {WHERE} AND blob1 = 'error' GROUP BY message ORDER BY n DESC LIMIT 10",
+    "Events": f"SELECT blob1 AS event, {N} AS n FROM pdfshrink WHERE {WHERE} GROUP BY event ORDER BY n DESC",
+    "Pages where tools were used": f"SELECT blob2 AS page, {N} AS n FROM pdfshrink WHERE {WHERE} AND blob1 != 'files_added' AND blob1 != 'images_added' GROUP BY page ORDER BY n DESC LIMIT 15",
+    "PDF compress: mode / method": f"SELECT blob4 AS mode, blob5 AS method, {N} AS n, round(SUM(_sample_interval * double1) / SUM(_sample_interval)) AS avg_saved_pct FROM pdfshrink WHERE {WHERE} AND blob1 = 'compressed' GROUP BY mode, method ORDER BY n DESC",
+    "Exact-size hit rate (PDF + image)": f"SELECT blob1 AS event, blob6 AS hit, {N} AS n FROM pdfshrink WHERE {WHERE} AND blob6 != '' AND blob1 IN ('compressed', 'image_resized') GROUP BY event, hit ORDER BY event, hit",
+    "Image target sizes (KB)": f"SELECT double2 AS kb, {N} AS n FROM pdfshrink WHERE {WHERE} AND blob1 = 'image_resized' GROUP BY kb ORDER BY n DESC LIMIT 10",
+    "Countries": f"SELECT blob3 AS country, {N} AS n FROM pdfshrink WHERE {WHERE} GROUP BY country ORDER BY n DESC LIMIT 10",
+    "Errors": f"SELECT blob7 AS message, {N} AS n FROM pdfshrink WHERE {WHERE} AND blob1 = 'error' GROUP BY message ORDER BY n DESC LIMIT 10",
 }
 
 

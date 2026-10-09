@@ -124,7 +124,7 @@ bottleneck, not on-page SEO.
 
 - `worker/index.js` runs only for `/api/*`; every page and file is served straight from `dist/` as a static asset.
 - The tools send anonymous events (`compressed`, `image_resized`, `merged`, …) to `POST /api/event`. They go to
-  Workers Analytics Engine (dataset `pdfshrink_events`, kept about 3 months) and to Workers Logs. No files, file
+  Workers Analytics Engine (dataset `pdfshrink`, kept about 3 months) and to Workers Logs. No files, file
   names or IP addresses are sent. Do-Not-Track and Global Privacy Control are honoured, and nothing is sent from
   localhost.
 - To read the stats:

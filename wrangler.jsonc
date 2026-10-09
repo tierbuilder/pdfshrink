@@ -15,7 +15,7 @@
   },
   // Anonymous usage events (created automatically on first write; free plan: 100k/day).
   "analytics_engine_datasets": [
-    { "binding": "EVENTS", "dataset": "pdfshrink_events" }
+    { "binding": "EVENTS", "dataset": "pdfshrink" }
   ],
   "observability": {
     "logs": {
