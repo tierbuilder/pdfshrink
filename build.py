@@ -422,6 +422,8 @@ self.addEventListener('fetch', (e) => {{
 /llms-full.txt
   Content-Type: text/plain; charset=utf-8
 """)
+    # Files Cloudflare should not serve as static assets.
+    (DIST / ".assetsignore").write_text("vercel.json\n.assetsignore\n")
     # Vercel equivalent of _headers.
     (DIST / "vercel.json").write_text(json.dumps({"trailingSlash": True, "headers": [
         {"source": "/(.*)", "headers": [{"key": "Content-Security-Policy", "value": csp},
