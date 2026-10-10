@@ -131,14 +131,15 @@
       it.result = { url, name: outName, blob, size: r.bytes.length };
       const saved = Math.max(0, Math.round((1 - r.bytes.length / file.size) * 100));
       sizes.innerHTML = fmt(file.size) + ' → <b>' + fmt(r.bytes.length) + '</b>' + (saved ? ' <em class="save">−' + saved + '%</em>' : '');
-      let msg = r.method === 'original' ? 'Kept original' : r.method === 'flatten' ? 'Done (pages flattened)' : 'Done — text & links kept';
+      let msg = r.locked ? '🔒 Password-protected' : r.method === 'original' ? 'Kept original' : r.method === 'flatten' ? 'Done (pages flattened)' : 'Done — text & links kept';
       if (opts.targetBytes) msg = (r.hit ? '✓ Under ' : '✗ Above ') + tsize.value + ' ' + tunit.value + ' · ' + msg;
       st.textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(1) + 's';
       if (r.note) st.title = r.note;
-      li.classList.add(opts.targetBytes && !r.hit ? 'miss' : 'done');
+      li.classList.add(r.locked || (opts.targetBytes && !r.hit) ? 'miss' : 'done');
       actions.innerHTML = '<a class="btn btn-sm" download="' + esc(outName) + '" href="' + url + '">Download</a>';
       if (r.note) {
         const n = document.createElement('p'); n.className = 'note'; n.textContent = r.note; li.appendChild(n);
+        if (r.locked) { const l = document.createElement('a'); l.href = '/unlock-pdf/'; l.textContent = ' Open Unlock PDF →'; n.appendChild(l); }
       }
       track('compressed', { mode: opts.targetBytes ? 'target' : opts.preset, method: r.method, saved, hit: r.hit !== false });
     } catch (e) {

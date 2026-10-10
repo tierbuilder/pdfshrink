@@ -1,11 +1,26 @@
 # PDF Shrink — private, in-browser PDF & image tools
 
-A static site (no backend) of PDF and image tools that run **entirely in the browser**: compress PDF (to an exact
-size), resize image to KB (with exact dimensions), merge PDF, split PDF, JPG→PDF and PDF→JPG. It costs nothing to run at any traffic
+A static site of PDF and image tools that run **entirely in the browser**:
+
+- **PDF:** compress (to an exact size), merge, split, rotate / delete / rearrange pages, page numbers, watermark,
+  sign, unlock, JPG→PDF (optionally under a KB limit), PDF→JPG, PDF→text with OCR.
+- **Images and forms:**
+  - resize to an exact KB
+  - photo and signature sizing for forms (px / cm / mm / inch at a chosen DPI)
+  - name and date printed on the photo
+  - passport-size presets
+  - change DPI without re-encoding
+  - HEIC / PNG / WebP → JPG, JPG → PNG
+  - compress JPEG or PNG (PNG keeps transparency)
+  - image→text with OCR
+
+Heavy libraries load only when a tool needs them: pdf-lib, pdf.js, the @cantoo pdf-lib fork for decryption,
+libheif (WebAssembly), UPNG.js and tesseract.js. All of them are self-hosted in `static/vendor/`, and none needs
+`unsafe-eval`, so the strict security policy stays on. It costs nothing to run at any traffic
 level, because every visitor's own device does the work. The build generates 25 pages targeting specific searches,
 with structured data and files for AI crawlers.
 
-The build now generates 42 pages: 6 tools, 7 "resize image to X KB" pages, 11 "compress PDF to X" pages,
+The build now generates 64 pages: 27 tools, 7 "resize image to X KB" pages, 11 "compress PDF to X" pages,
 use-case, device and guide pages, plus the about, contact and legal pages.
 
 ## Quick start

@@ -361,9 +361,28 @@
    * compress(bytes, options, onStatus) → { bytes, method, hit, note }
    * options: { preset: 'light'|'recommended'|'strong'|'lossless', targetBytes?, gray, stripMeta, allowFlatten }
    */
+  // Remove encryption from PDFs that open without a password (permission-restricted files),
+  // using the @cantoo pdf-lib fork, so they can be optimised without flattening.
+  async function decryptIfRestricted(bytes) {
+    if (!isEncrypted(bytes)) return bytes;
+    try {
+      await ready();
+      const orig = window.PDFLib;
+      await loadScript(VENDOR + 'pdf-lib-cantoo.min.js');
+      const C = window.PDFLib; window.PDFLib = orig;
+      const d = await C.PDFDocument.load(bytes, { password: '', ignoreEncryption: false });
+      return new Uint8Array(await d.save({ useObjectStreams: false }));
+    } catch (e) { return bytes; } // needs a real password: fall back to flattening
+  }
+
   async function compress(input, options, onStatus) {
-    const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+    const original = input instanceof Uint8Array ? input : new Uint8Array(input);
+    const bytes = await decryptIfRestricted(original);
     const status = (msg, frac) => onStatus && onStatus(msg, frac);
+    if (isEncrypted(bytes)) {
+      return { bytes: original, method: 'original', hit: false, locked: true,
+        note: 'This PDF needs a password to open. Unlock it first (Unlock PDF tool), then compress the unlocked copy.' };
+    }
     const base = { gray: !!options.gray, stripMeta: options.stripMeta !== false };
     let encrypted = false;
     const tryRun = async (fn) => {
@@ -371,8 +390,8 @@
       catch (e) { if (e.message === 'ENCRYPTED') encrypted = true; return { error: e }; }
     };
     const pick = (r, extra) => {
-      if (!r || r.error || r.bytes.length >= bytes.length) {
-        return Object.assign({ bytes, method: 'original', note: 'This PDF is already well optimized — we kept the original.' }, extra);
+      if (!r || r.error || r.bytes.length >= original.length) {
+        return Object.assign({ bytes: original, method: 'original', note: 'This PDF is already well optimized — we kept the original.' }, extra);
       }
       return Object.assign(r, extra);
     };
@@ -396,9 +415,9 @@
     }
 
     const target = options.targetBytes;
-    if (bytes.length <= target) {
+    if (original.length <= target) {
       const ll = isEncrypted(bytes) ? null : await tryRun(() => smartCompress(bytes, Object.assign({}, base, { images: false })));
-      return pick(ll, { hit: true, note: 'Your file was already under the target size' + (ll && !ll.error && ll.bytes.length < bytes.length ? ' — we still removed hidden waste.' : '.') });
+      return pick(ll, { hit: true, note: 'Your file was already under the target size' + (ll && !ll.error && ll.bytes.length < original.length ? ' — we still removed hidden waste.' : '.') });
     }
     let smallest = null;
     if (!isEncrypted(bytes)) {

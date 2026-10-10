@@ -46,6 +46,36 @@ def path_for(slug):
     return f"/{slug}/" if slug else "/"
 
 
+# Large third-party files are not committed (slow uploads); the build downloads them from
+# the npm CDN and verifies a pinned SHA-256, so a tampered or changed file fails the build.
+REMOTE_VENDOR = [
+    ("tesseract/eng.traineddata.gz",
+     "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int/eng.traineddata.gz",
+     "45b4cb346724ac1774f1c36f42f182b887bcdb28ebe63e6fff90ac41f3fcff91"),
+    ("libheif-bundle.js",
+     "https://cdn.jsdelivr.net/npm/libheif-js@1.19.8/libheif-wasm/libheif-bundle.js",
+     "793b36c913689784b2bfba60456fd87c14ed49e2d13f3b4d2611baaf05148f81"),
+    ("pdf-lib-cantoo.min.js",
+     "https://cdn.jsdelivr.net/npm/@cantoo/pdf-lib@2.11.1/dist/pdf-lib.min.js",
+     "2294a0bb8742d8948ae2d49a60cb6a3600c0b5deae6de198e57fb368d1b79ba9"),
+]
+
+
+def fetch_vendor():
+    import subprocess
+    for rel, url, sha in REMOTE_VENDOR:
+        dest = STATIC / "vendor" / rel
+        if dest.exists() and hashlib.sha256(dest.read_bytes()).hexdigest() == sha:
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Downloading {rel} …")
+        subprocess.run(["curl", "-sSfL", "--retry", "3", "-o", str(dest), url], check=True)
+        got = hashlib.sha256(dest.read_bytes()).hexdigest()
+        if got != sha:
+            dest.unlink()
+            raise SystemExit(f"Checksum mismatch for {rel}: expected {sha}, got {got}")
+
+
 def fingerprint(src: Path, name: str) -> str:
     h = hashlib.sha256(src.read_bytes()).hexdigest()[:10]
     stem, ext = name.rsplit(".", 1)
@@ -135,14 +165,15 @@ def related(p, groups):
         for q in groups.get(g, []):
             if q["slug"] not in seen:
                 seen.add(q["slug"]); out.append(q)
-    return out[:16]
+    return out[:20]
 
 
 def footer(groups):
     def col(title, items):
         return f"<div><h4>{title}</h4>" + "".join(f'<a href="{path_for(q["slug"])}">{e(q["crumb"])}</a>' for q in items) + "</div>"
     return f"""<footer class="site"><div class="wrap"><div class="cols">
-{col("Tools", [groups["main"][0] | {"crumb": "Compress PDF"}] + groups["tool"])}
+{col("PDF tools", [groups["main"][0] | {"crumb": "Compress PDF"}] + [q for q in groups["tool"] if cat_of(q) == "pdf"])}
+{col("Image &amp; form tools", [q for q in groups["tool"] if cat_of(q) != "pdf"])}
 {col("Image to size", groups["img"])}
 {col("PDF to size", groups["size"])}
 {col("Use cases", groups["use"] + groups["device"])}
@@ -159,14 +190,28 @@ def fill_contact(text, plain=False):
     return text.replace(e("{{CONTACT}}"), link).replace("{{CONTACT}}", link)
 
 
+CAT = {"compress-image": "image", "merge-pdf": "pdf", "split-pdf": "pdf", "jpg-to-pdf": "pdf", "pdf-to-jpg": "pdf"}
+BLURBS = {"compress-image": "Photos, scans & signatures to any KB.", "merge-pdf": "Combine PDFs in any order.",
+          "split-pdf": "Extract pages or split into files.", "jpg-to-pdf": "Photos & scans into one PDF.",
+          "pdf-to-jpg": "Every page as a JPG or PNG."}
+
+
+def cat_of(q):
+    return q.get("cat") or CAT.get(q["slug"], "pdf")
+
+
 def tools_grid(groups):
-    items = [("/", "Compress PDF", "Shrink PDFs or hit an exact size like 100 KB.")]
-    blurbs = {"compress-image": "Photos, scans & signatures to any KB.", "merge-pdf": "Combine PDFs in any order.",
-              "split-pdf": "Extract pages or split into files.", "jpg-to-pdf": "Photos & scans into one PDF.",
-              "pdf-to-jpg": "Every page as a JPG or PNG."}
-    items += [(path_for(q["slug"]), q["crumb"], blurbs.get(q["slug"], "")) for q in groups["tool"]]
-    cards = "".join(f'<a class="card toolcard" href="{h}"><h3>{e(t)}</h3><p>{e(b)}</p></a>' for h, t, b in items)
-    return f'<section aria-labelledby="alltools"><h2 id="alltools">All free tools</h2><div class="grid">{cards}</div></section>'
+    """Home/404 grid of every tool, grouped by category."""
+    sections = [("form", "Photos & documents for online forms"), ("pdf", "PDF tools"), ("image", "Image tools")]
+    pdf = [("/", "Compress PDF", "Shrink PDFs or hit an exact size like 100 KB.")]
+    html_ = '<section aria-labelledby="alltools"><h2 id="alltools">All free tools</h2>'
+    for cat, title in sections:
+        items = (pdf if cat == "pdf" else []) + [
+            (path_for(q["slug"]), q["crumb"], BLURBS.get(q["slug"]) or q["desc"].split(". ")[0] + ".")
+            for q in groups["tool"] if cat_of(q) == cat]
+        cards = "".join(f'<a class="card toolcard" href="{h}"><h3>{e(t)}</h3><p>{e(b)}</p></a>' for h, t, b in items)
+        html_ += f'<h3 class="gridhead">{title}</h3><div class="grid">{cards}</div>'
+    return html_ + "</section>"
 
 
 def render(p, groups, assets):
@@ -193,7 +238,9 @@ def render(p, groups, assets):
             f"<details><summary>{e(q)}</summary><p>{e(a)}</p></details>" for q, a in p["faqs"]) + "</section>"
     rel = "".join(f'<li><a href="{path_for(q["slug"])}">{e(q["crumb"])}</a></li>' for q in related(p, groups))
     third = {"compress": "🎯 Exact size", "image": "🎯 Exact KB", "merge": "↕ Reorder", "split": "✂ Any range",
-             "img2pdf": "📄 A4 / Letter", "pdf2img": "🖼 Up to 300 DPI"}.get(p.get("tool"), "")
+             "img2pdf": "📄 A4 / Letter", "pdf2img": "🖼 Up to 300 DPI", "dpi": "✓ Lossless", "organize": "⟳ Thumbnails",
+             "pagenum": "# 4 formats", "watermark": "✎ Any text", "sign": "✍ Draw or type", "unlock": "✓ Keeps text",
+             "ocr": "🔍 Built-in OCR"}.get(p.get("tool"), "")
     badges = (f'<ul class="badges"><li>🔒 No upload</li><li>∞ No limits</li><li>{third}</li><li>✓ No sign-up</li></ul>'
               if p.get("tool") else "")
     if p.get("tool") == "compress":
@@ -230,7 +277,7 @@ def render(p, groups, assets):
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site"><div class="wrap"><a class="brand" href="/">{LOGO_SVG}{e(SITE_NAME)}</a>
-<nav class="top" aria-label="Main"><a href="/">Compress PDF</a><a href="/resize-image-to-20kb/">Image to 20 KB</a><a href="/merge-pdf/">Merge</a><a href="/split-pdf/">Split</a><a href="/jpg-to-pdf/">JPG→PDF</a><a href="/pdf-to-jpg/">PDF→JPG</a></nav></div></header>
+<nav class="top" aria-label="Main"><a href="/">Compress PDF</a><a href="/resize-image-to-20kb/">Image to 20 KB</a><a href="/photo-signature-resizer/">Exam photo</a><a href="/merge-pdf/">Merge</a><a href="/sign-pdf/">Sign</a><a href="/#alltools">All tools</a></nav></div></header>
 <main class="wrap" id="main">
 {crumbs}
 <div class="hero"><h1>{e(p["h1"])}</h1><p class="lead">{e(p["lead"])}</p>{badges}</div>
@@ -328,6 +375,7 @@ def main():
     if DIST.exists():
         shutil.rmtree(DIST)
     DIST.mkdir()
+    fetch_vendor()
     shutil.copytree(STATIC / "vendor", DIST / "vendor")
     assets = {"css": fingerprint(STATIC / "style.css", "style.css"),
               "engine": fingerprint(STATIC / "engine.js", "engine.js"),

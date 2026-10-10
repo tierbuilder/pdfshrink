@@ -849,7 +849,11 @@ LICENSES = dict(
     facts=["pdf.js — Apache License 2.0 — © Mozilla Foundation and contributors.",
            "pdf-lib — MIT License — © Andrew Dillon.",
            "pako — MIT License (and zlib license for ported code) — © Vitaly Puzrin, Andrei Tuputcyn.",
-           "JSZip — used under the MIT License (dual-licensed MIT/GPLv3) — © Stuart Knightley and contributors."],
+           "JSZip — used under the MIT License (dual-licensed MIT/GPLv3) — © Stuart Knightley and contributors.",
+           "@cantoo/pdf-lib — MIT License — fork of pdf-lib with encryption support (used to unlock PDFs).",
+           "libheif-js — LGPL-3.0 — libheif (with libde265) compiled to WebAssembly, used to open iPhone HEIC photos.",
+           "UPNG.js — MIT License — © Photopea (Ivan Kutskir).",
+           "tesseract.js and tesseract.js-core — Apache License 2.0; Tesseract OCR and the English language data — Apache License 2.0."],
     steps=None, faqs=[],
     body="""
 <h2>Full license texts</h2>
@@ -858,7 +862,19 @@ LICENSES = dict(
 <li><a href="/vendor/licenses/pdf-lib-LICENSE.txt">pdf-lib — MIT License</a> (v1.17.1)</li>
 <li><a href="/vendor/licenses/pako-LICENSE.txt">pako — MIT License</a> (v2.1.0)</li>
 <li><a href="/vendor/licenses/jszip-LICENSE.txt">JSZip — MIT / GPLv3 dual license</a> (v3.10.1, used under MIT)</li>
+<li><a href="/vendor/licenses/pdf-lib-cantoo-LICENSE.txt">@cantoo/pdf-lib — MIT License</a> (v2.11.1)</li>
+<li><a href="/vendor/licenses/upng-LICENSE.txt">UPNG.js — MIT License</a> (v2.1.0)</li>
+<li><a href="/vendor/licenses/tesseract.js-LICENSE.txt">tesseract.js — Apache License 2.0</a> (v7.0.0, with tesseract.js-core v7.0.0 and Tesseract English data, Apache 2.0)</li>
+<li><a href="/vendor/licenses/libheif-js-LICENSE.txt">libheif-js — LGPL-3.0</a> (v1.19.8, WebAssembly bundle)</li>
 </ul>
+<h2>LGPL components</h2>
+<p>libheif-js packages <a href="https://github.com/strukturag/libheif">libheif</a> and
+<a href="https://github.com/strukturag/libde265">libde265</a>, licensed under the
+<a href="/vendor/licenses/lgpl-3.0.txt">GNU Lesser General Public License v3.0</a> (which incorporates the
+<a href="/vendor/licenses/gpl-3.0.txt">GNU GPL v3.0</a>). They are shipped unmodified as a separate file,
+<a href="/vendor/libheif-bundle.js">/vendor/libheif-bundle.js</a>, which you may replace with your own build. Their
+source code is available from the projects linked above and from the
+<a href="https://github.com/catdad-experiments/libheif-js">libheif-js repository</a>.</p>
 """,
 )
 ACCESSIBILITY = dict(
@@ -925,4 +941,334 @@ def all_pages():
         if p["tool"] is True:
             p["tool"] = "compress"
         p.setdefault("mode", "target" if p.get("target_kb") else "recommended")
+    return pages
+
+
+# ================================================================ tier 1 + 2 tools
+FAQ_FORM_RULES = ("Which size should I choose for my form?",
+                  "Always use the exact numbers printed in your application's instructions or official notification — "
+                  "pixels or cm, DPI, minimum and maximum KB, and format. The presets here are only common examples.")
+FAQ_PDF_PRIVATE = ("Is my PDF uploaded?", "No. The PDF is opened and edited inside your browser; it never leaves your device.")
+
+
+def _tool(slug, tool, crumb, title, desc, h1, lead, facts, steps, body, faqs, cat, **extra):
+    d = dict(slug=slug, tool=tool, crumb=crumb, title=title, desc=desc, h1=h1, lead=lead, facts=facts, steps=steps,
+             body=body, faqs=faqs, group="tool", cat=cat)
+    d.update(extra)
+    return d
+
+
+NEW_TOOLS = [
+    # ---------------------------------------------------------------- tier 1: forms & images
+    _tool("photo-signature-resizer", "image", "Photo & signature resizer",
+          "Photo & Signature Resizer for Exam Forms — KB, cm, DPI",
+          "Resize your photo and signature for online exam and job forms: exact KB, pixel or cm size, DPI, and name & date on the photo. Free, no upload.",
+          "Photo & signature resizer for online forms",
+          "Get your photo and signature exactly right for exam, job and scholarship applications — file size, dimensions, DPI and format in one step.",
+          ["Sets maximum and minimum KB, exact dimensions in px, cm, mm or inches, and DPI together.",
+           "Can print your name and the photo date on the photo when a form asks for it.",
+           "Outputs JPG by default — the format nearly every application portal accepts.",
+           "Runs in your browser: your photo and signature are never uploaded."],
+          ["Read the photo and signature rules in your application's instructions.",
+           "Drop the photo, set its size limit and dimensions (use a preset as a starting point), download.",
+           "Repeat for the signature with its own limits."],
+          """
+<h2>Why uploads get rejected</h2>
+<ul><li><strong>File size</strong> outside the allowed range — too big <em>or</em> too small (many forms have a minimum).</li>
+<li><strong>Wrong dimensions</strong> — the form checks pixel width and height, or cm at a stated DPI.</li>
+<li><strong>Wrong format</strong> — PNG or HEIC (iPhone) instead of JPG.</li>
+<li><strong>Missing name/date</strong> — some recruitment forms require them printed on the photo.</li></ul>
+<p>This tool handles all four at once. For signatures, sign in black ink on plain white paper and crop tightly.</p>
+""",
+          [FAQ_FORM_RULES, ("Can I convert an iPhone (HEIC) photo?", "Yes — HEIC photos are converted automatically and saved as JPG."), FAQ_IMG_PRIVACY],
+          "form", target_kb=50, img=dict(presets="exam", open=True)),
+    _tool("add-name-and-date-on-photo", "image", "Name & date on photo",
+          "Add Name and Date on Photo Online — For Exam Application Forms",
+          "Print your name and the photo date at the bottom of your photograph, as some exam and recruitment forms require. Exact KB and size. Free, private.",
+          "Add name and date on your photo",
+          "Some recruitment and exam applications require the candidate's name and the date the photo was taken printed on the photo. Do it here in seconds.",
+          ["Adds a white band at the bottom with your name and date in clear black text.",
+           "Choose the date format your form wants (DD-MM-YYYY, DD/MM/YYYY and more).",
+           "Keeps the final size within your KB limit and exact dimensions.",
+           "Processed on your device — your photo is never uploaded."],
+          ["Drop your photo.", "Type your name and pick the photo date and format.", "Set the size limit and dimensions from your form, then download."],
+          """
+<h2>Tips</h2>
+<ul><li>Use the date the photo was <em>taken</em>, and make sure it's recent enough for your form's rules.</li>
+<li>Use the same spelling of your name as in your application.</li>
+<li>Check the preview: the text must be readable, and your face must still fill most of the photo.</li></ul>
+""",
+          [FAQ_FORM_RULES, ("Will the text make my face smaller?", "The photo is cropped to fill the area above the band, so your face stays large; choose “Crop to exact size” to keep exact dimensions."), FAQ_IMG_PRIVACY],
+          "form", target_kb=50, img=dict(presets="exam", text=True)),
+    _tool("resize-image-in-cm", "image", "Resize in cm / mm",
+          "Resize Image in cm, mm or Inches (with DPI) — Free Online",
+          "Resize a photo to an exact size in centimetres, millimetres or inches at the DPI you need, e.g. 3.5 × 4.5 cm at 200 DPI. Free and private.",
+          "Resize an image in cm, mm or inches",
+          "Forms and printers often give sizes in cm and DPI instead of pixels. Enter them directly — we do the maths and write the DPI into the file.",
+          ["Converts cm/mm/inches to pixels at your DPI (pixels = cm ÷ 2.54 × DPI).",
+           "Writes the DPI into the JPG or PNG so print and form checks read the right physical size.",
+           "Optional maximum KB at the same time.",
+           "Runs locally — nothing is uploaded."],
+          ["Drop your image.", "Enter width and height, choose cm/mm/inch and the DPI.", "Download — the file has the exact size and DPI."],
+          """
+<h2>Quick reference at 200 DPI</h2>
+<div class="tablewrap"><table><thead><tr><th>Physical size</th><th>Pixels at 200 DPI</th><th>Pixels at 300 DPI</th></tr></thead><tbody>
+<tr><td>3.5 × 4.5 cm</td><td>276 × 354</td><td>413 × 531</td></tr>
+<tr><td>2 × 2 in</td><td>400 × 400</td><td>600 × 600</td></tr>
+<tr><td>3.5 × 1.5 cm</td><td>276 × 118</td><td>413 × 177</td></tr>
+</tbody></table></div>
+""",
+          [("What DPI should I use?", "Use the DPI stated in your form or by your printer. If none is stated, 200 DPI is common for online forms and 300 DPI for printing."), FAQ_IMG_PRIVACY],
+          "form", img=dict(presets="exam", unit="cm")),
+    _tool("passport-size-photo-resize", "image", "Passport-size photo",
+          "Passport Size Photo Resizer — 3.5×4.5 cm, 2×2 in, Free",
+          "Resize a photo to passport size (3.5 × 4.5 cm, 35 × 45 mm or 2 × 2 in) at 300 DPI, with an optional KB limit. Free, private, no upload.",
+          "Passport-size photo resizer",
+          "Crop and resize your photo to common passport-photo sizes for online applications — in your browser.",
+          ["Presets for 3.5 × 4.5 cm, 35 × 45 mm, 2 × 2 in and 51 × 51 mm at 300 DPI.",
+           "Crops to the exact shape so nothing is stretched.",
+           "Optional maximum KB for online upload limits.",
+           "Your photo is never uploaded."],
+          ["Drop a well-lit, front-facing photo with a plain background.", "Pick a preset (or enter your size).", "Download the JPG."],
+          """
+<h2>Before you start</h2>
+<p>Official passport and visa photos have strict rules on background colour, head size, expression and age of the
+photo. This tool handles size and file format; check the issuing authority's photo guidelines for everything else,
+and use a professional studio where the authority requires one.</p>
+""",
+          [("Is this an official passport photo service?", "No. It's an independent resizing tool. Requirements vary by country and application — always follow the official guidelines."), FAQ_IMG_PRIVACY],
+          "form", img=dict(presets="passport", unit="cm")),
+    _tool("change-image-dpi", "dpi", "Change image DPI",
+          "Change Image DPI Online — 72, 200, 300 DPI Free",
+          "Set the DPI of a JPG or PNG to 72, 150, 200, 300 or any value without changing its pixels or quality. Free, instant, no upload.",
+          "Change image DPI",
+          "Set a photo's DPI (dots per inch) to the value a form or printer asks for — without touching a single pixel.",
+          ["Changes only the DPI stored in the file (JFIF/EXIF for JPG, pHYs for PNG) — no quality loss.",
+           "Pixel dimensions and file size stay the same.",
+           "Batch-change many images and download a ZIP.",
+           "Processed on your device."],
+          ["Drop JPG or PNG images.", "Choose the DPI (e.g. 200 or 300).", "Download — done."],
+          """
+<h2>What DPI actually changes</h2>
+<p>DPI is a label that tells printers and some form checkers how large the image is physically. A 600 × 600 px
+photo is 2 × 2 inches at 300 DPI, or about 8.3 × 8.3 inches at 72 DPI — the pixels are identical. If you need a
+specific physical size, use <a href="/resize-image-in-cm/">Resize in cm</a> instead, which sets both pixels and DPI.</p>
+""",
+          [("Does changing DPI reduce quality?", "No. Only the stored DPI value changes; the image data is untouched."), FAQ_IMG_PRIVACY],
+          "image"),
+    _tool("jpg-to-pdf-under-100kb", "img2pdf", "JPG to PDF under 100 KB",
+          "JPG to PDF Under 100 KB — Combine Images, Exact Size",
+          "Turn one or more photos or scans into a single PDF under 100 KB for online forms. Order pages, pick A4. Free and private — no upload.",
+          "JPG to PDF under 100 KB",
+          "Many forms want documents as one PDF under 100 KB. Add your photos or scans and get a PDF that fits — in one step.",
+          ["Combines images into one PDF, then compresses it to under 100 KB automatically.",
+           "Counts 1 KB as 1000 bytes so the file passes either convention.",
+           "A4, Letter or fit-to-image pages; phone photo rotation fixed automatically.",
+           "Runs locally — documents are never uploaded."],
+          ["Drop your images (certificate pages, ID front and back…).", "Order them; the 100 KB limit is pre-set.", "Click “Create PDF” and download."],
+          """
+<h2>Tips to fit 100 KB</h2>
+<ul><li>Crop photos to the document edges before adding them.</li><li>Use 1–2 pages; each extra page shares the same 100 KB.</li>
+<li>Choose “Small file” quality for text documents.</li></ul>
+""",
+          [("What if it can't reach 100 KB?", "You'll see a message. Use fewer pages, crop the images, or choose “Small file” quality and try again."), FAQ_IMG_PRIVACY],
+          "form", pdf_max_kb=100),
+    _tool("jpg-to-pdf-under-200kb", "img2pdf", "JPG to PDF under 200 KB",
+          "JPG to PDF Under 200 KB — Photos to One Small PDF",
+          "Combine photos or scanned pages into one PDF under 200 KB for application uploads. Reorder pages, A4 or Letter. Free, private, in your browser.",
+          "JPG to PDF under 200 KB",
+          "Merge your document photos into one PDF that's guaranteed under 200 KB when possible — no separate compress step.",
+          ["Builds the PDF, then compresses it to fit 200 KB.",
+           "3–4 scanned pages typically fit at readable quality.",
+           "Rotation from phone cameras is applied automatically.",
+           "Your images never leave your device."],
+          ["Drop your images.", "Arrange the order; 200 KB is pre-set.", "Create and download the PDF."],
+          """
+<h2>Good for</h2><ul><li>Marksheets and certificates that must be one PDF.</li><li>ID proof front + back in one file.</li><li>Supporting documents for visa and university forms.</li></ul>
+""",
+          [("Can I change the limit?", "Yes — edit “Max PDF size” to any value, or clear it for no limit."), FAQ_IMG_PRIVACY],
+          "form", pdf_max_kb=200),
+    _tool("heic-to-jpg", "image", "HEIC to JPG",
+          "HEIC to JPG Converter — iPhone Photos to JPG Free",
+          "Convert iPhone HEIC photos to JPG in your browser so forms and Windows can open them. Batch convert, optional size limit. Free, private.",
+          "Convert HEIC to JPG",
+          "iPhone photos are saved as HEIC, which many websites and forms reject. Convert them to JPG here — without uploading them.",
+          ["Converts HEIC/HEIF photos to JPG (or PNG/WebP).",
+           "Batch-convert many photos and download a ZIP.",
+           "Optional maximum KB and dimensions in the same step.",
+           "Location (GPS) data is not carried over to the JPG."],
+          ["Drop your HEIC photos.", "Keep JPG and choose quality (or set a KB limit).", "Download the JPGs."],
+          """
+<h2>Stop your iPhone saving HEIC</h2>
+<p>On iPhone go to <em>Settings → Camera → Formats</em> and choose <em>Most Compatible</em> to save new photos as JPG.
+Photos shared by AirDrop or email can also be sent as JPG automatically.</p>
+""",
+          [("Why does conversion take a few seconds?", "HEIC decoding runs in your browser instead of on a server, which keeps your photos private."), FAQ_IMG_PRIVACY],
+          "image", img=dict(fmt="jpg", q="0.95")),
+    _tool("png-to-jpg", "image", "PNG to JPG",
+          "PNG to JPG Converter — Free, Batch, No Upload",
+          "Convert PNG images and screenshots to JPG, usually 5–10× smaller. Transparent areas become white. Batch + ZIP. Free and private.",
+          "Convert PNG to JPG",
+          "Turn PNG screenshots and images into compact JPGs that every form and website accepts.",
+          ["PNG photos and screenshots usually shrink 5–10× as JPG.", "Transparent areas are filled with white.",
+           "Batch convert and download a ZIP.", "Processed locally in your browser."],
+          ["Drop PNG files.", "Choose quality (or a KB limit).", "Download the JPGs."],
+          """<h2>When to keep PNG</h2><p>Keep PNG for logos, icons and images that need transparency or crisp flat colours. For photos and screenshots you upload to forms, JPG is smaller and universally accepted.</p>""",
+          [("Will text in screenshots stay sharp?", "At “High” quality, yes. Lower settings shrink the file more but can blur small text."), FAQ_IMG_PRIVACY],
+          "image", img=dict(fmt="jpg", q="0.95")),
+    _tool("webp-to-jpg", "image", "WebP to JPG",
+          "WebP to JPG Converter — Free Online, No Upload",
+          "Convert WebP images saved from websites into JPG files that open everywhere. Batch convert, optional size limit. Free, private.",
+          "Convert WebP to JPG",
+          "Images saved from the web are often WebP, which some apps and forms can't open. Convert them to JPG in one click.",
+          ["Converts WebP (including transparent WebP) to JPG.", "Batch + ZIP download.", "Optional KB limit and dimensions.", "Runs in your browser."],
+          ["Drop WebP images.", "Keep JPG and choose quality.", "Download."],
+          """<h2>About WebP</h2><p>WebP is a modern web format that's smaller than JPG, but older software and many upload forms still expect JPG. Converting is quick and keeps the visible quality.</p>""",
+          [("Can I convert to PNG instead?", "Yes — change Format to PNG to keep transparency."), FAQ_IMG_PRIVACY],
+          "image", img=dict(fmt="jpg", q="0.95")),
+    _tool("jpg-to-png", "image", "JPG to PNG",
+          "JPG to PNG Converter — Free Online, No Upload",
+          "Convert JPG photos to PNG in your browser. Lossless PNG by default, batch + ZIP, optional resizing. Free and private.",
+          "Convert JPG to PNG",
+          "Need a PNG for a design tool or document? Convert JPG images to PNG without uploading them.",
+          ["Lossless PNG output by default.", "Batch convert and download a ZIP.", "Optional resizing and DPI.", "Processed locally."],
+          ["Drop JPG files.", "Keep “High / lossless”.", "Download the PNGs."],
+          """<h2>Heads-up on file size</h2><p>PNG is lossless, so photos usually get <em>bigger</em> as PNG. If you need a small file for a form, keep JPG and use <a href="/compress-jpeg/">Compress JPEG</a> instead.</p>""",
+          [("Does converting to PNG improve quality?", "No — it preserves the JPG exactly as it is; it can't restore detail already lost."), FAQ_IMG_PRIVACY],
+          "image", img=dict(fmt="png", q="0.95")),
+    _tool("compress-jpeg", "image", "Compress JPEG",
+          "Compress JPEG Online — Reduce JPG File Size Free",
+          "Reduce JPG file size by 50–90% with adjustable quality or an exact KB target. Batch + ZIP, EXIF location removed. Free, private, no upload.",
+          "Compress JPEG images",
+          "Shrink photos for email, websites and forms — choose a quality level or an exact size.",
+          ["Typical phone photos shrink 70–90% with no visible difference on screen.", "Quality levels or an exact KB/MB target.",
+           "Batch + ZIP download; EXIF location data removed.", "Runs in your browser."],
+          ["Drop JPG photos.", "Pick a quality level, or enter a maximum size.", "Download."],
+          """<h2>Why phone photos are so big</h2><p>Phone cameras save 12–48 megapixel images at very high quality. Websites and forms display them far smaller, so re-encoding at a sensible size and quality saves most of the bytes.</p>""",
+          [("What's the best quality setting?", "“Balanced” is visually indistinguishable for most photos. Use “High” for printing and “Small file” for web uploads."), FAQ_IMG_EXIF],
+          "image", img=dict(fmt="jpg")),
+    _tool("compress-png", "image", "Compress PNG",
+          "Compress PNG Online — Smaller PNG, Keeps Transparency",
+          "Reduce PNG file size by 50–80% with colour quantisation while keeping transparency. Batch + ZIP. Free, private, runs in your browser.",
+          "Compress PNG images",
+          "Make PNG screenshots, logos and graphics much smaller while keeping transparency — no upload.",
+          ["Smart colour reduction (palette quantisation) — usually 50–80% smaller.", "Transparency is preserved.",
+           "Choose a quality level or an exact KB target.", "Processed locally."],
+          ["Drop PNG files.", "Pick a quality level (Balanced is a good start).", "Download the smaller PNGs."],
+          """<h2>How PNG compression works</h2><p>PNG is lossless, so the big savings come from reducing the number of colours to a smart palette — almost invisible for screenshots, logos and illustrations. For photographs, <a href="/png-to-jpg/">converting to JPG</a> saves even more.</p>""",
+          [("Will my transparent background stay?", "Yes — PNG output keeps the alpha channel."), FAQ_IMG_PRIVACY],
+          "image", img=dict(fmt="png")),
+    # ---------------------------------------------------------------- tier 2: PDF
+    _tool("rotate-pdf", "organize", "Rotate PDF",
+          "Rotate PDF Pages Online — Free, Permanent, No Upload",
+          "Rotate all or individual PDF pages left or right and save the PDF permanently. See page thumbnails. Free, private — runs in your browser.",
+          "Rotate PDF pages",
+          "Fix sideways or upside-down scans: rotate every page or just the ones that need it, then save.",
+          ["Rotate all pages at once or page by page, with thumbnails.", "Rotation is saved in the PDF permanently.",
+           "Text, links and quality are untouched.", "Your PDF never leaves your device."],
+          ["Drop your PDF.", "Use ⟲ / ⟳ on single pages or “Rotate all”.", "Click “Save PDF” and download."],
+          """<h2>Also on this page</h2><p>The same editor lets you <a href="/delete-pdf-pages/">delete pages</a> and <a href="/rearrange-pdf-pages/">reorder pages</a> before saving.</p>""",
+          [("Does rotating reduce quality?", "No — only the page's rotation setting changes."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("delete-pdf-pages", "organize", "Delete PDF pages",
+          "Delete Pages from PDF Online — Free, No Upload",
+          "Remove unwanted pages from a PDF by clicking them or typing ranges like 2, 5-7. Thumbnails, undo, instant download. Free and private.",
+          "Delete pages from a PDF",
+          "Remove blank, duplicate or unwanted pages — click them, or type the page numbers.",
+          ["Click ✕ on any page, or type ranges like “2, 5-7”.", "Deleted pages are shown greyed out until you save — click ↺ to restore.",
+           "Remaining pages keep their quality, text and links.", "Runs locally."],
+          ["Drop your PDF.", "Mark pages to delete.", "Save and download."],
+          """<h2>Make it smaller too</h2><p>Removing pages is the fastest way to shrink a PDF. Still too big? Run the result through <a href="/">Compress PDF</a>.</p>""",
+          [("Can I undo a deletion?", "Yes — until you save, click ↺ on the page or “Reset”."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("rearrange-pdf-pages", "organize", "Rearrange PDF pages",
+          "Rearrange PDF Pages — Reorder, Move & Reverse Free",
+          "Change the order of pages in a PDF with ← → buttons and thumbnails, or reverse the whole document. Free, private, in your browser.",
+          "Rearrange PDF pages",
+          "Put scanned pages in the right order, move a page to the end, or reverse the whole file.",
+          ["Move pages with ← → and see thumbnails as you go.", "One-click “Reverse order” for back-to-front scans.",
+           "Combine with rotate and delete in the same step.", "Your PDF is never uploaded."],
+          ["Drop your PDF.", "Move pages into the order you want.", "Save and download."],
+          """<h2>Combining several PDFs?</h2><p>Use <a href="/merge-pdf/">Merge PDF</a> first, then reorder the pages of the merged file here.</p>""",
+          [("Is drag-and-drop supported?", "Use the ← → buttons on each page — they also work with a keyboard and on phones."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("add-page-numbers-to-pdf", "pagenum", "Add page numbers",
+          "Add Page Numbers to PDF — Free, Choose Position & Style",
+          "Number the pages of a PDF: choose position, format (1, Page 1, 1 / 10, Page 1 of 10), start number and skip the cover. Free, no upload.",
+          "Add page numbers to a PDF",
+          "Add clean page numbers to reports, theses and applications — positioned exactly where you want them.",
+          ["Six positions: top or bottom, left, centre or right.", "Formats: 1 · Page 1 · 1 / N · Page 1 of N.",
+           "Start from any number and optionally skip the cover page.", "Rotated pages are numbered the right way up."],
+          ["Drop your PDF.", "Choose position, format and start number.", "Add numbers and download."],
+          """<h2>Tip</h2><p>Merging documents? <a href="/merge-pdf/">Merge</a> them first so the numbering runs continuously across the whole file.</p>""",
+          [("Can I start numbering at page 2?", "Tick “Don't number the first page” — the second page becomes 1 (or your start number)."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("watermark-pdf", "watermark", "Watermark PDF",
+          "Watermark PDF Online — Add Text Watermark Free",
+          "Stamp CONFIDENTIAL, DRAFT, COPY or your own text across every page of a PDF. Choose size, colour, opacity and angle. Free, private.",
+          "Add a watermark to a PDF",
+          "Mark documents as CONFIDENTIAL, DRAFT or “Copy for KYC only” before you share them.",
+          ["Any text, diagonal or horizontal, on every page.", "Choose colour, size and opacity.",
+           "Good practice for ID copies: write who it's for and why (e.g. “For XYZ Bank KYC only”).", "Runs locally."],
+          ["Drop your PDF.", "Type the watermark text and choose its look.", "Add and download."],
+          """<h2>Protect copies of your ID</h2><p>When you share a copy of an ID or bank statement, a watermark stating the purpose and recipient makes misuse much harder. Make the text specific: “Submitted to ABC Ltd for address proof — 10/10/2026”.</p>""",
+          [("Can a watermark be removed?", "Someone with PDF editing software can remove a text watermark, so it deters casual misuse rather than guaranteeing security."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("sign-pdf", "sign", "Sign PDF",
+          "Sign PDF Online Free — Draw, Type or Upload Signature",
+          "Add your signature to a PDF: draw it, type it or upload an image, then click to place it on any page. Free, private — never uploaded.",
+          "Sign a PDF",
+          "Draw, type or upload your signature and place it anywhere on the document — all on your device.",
+          ["Draw with a mouse, finger or stylus; type your name; or upload a photo of your signature.",
+           "White backgrounds are removed from uploaded signatures automatically.",
+           "Place as many signatures as you need, on any pages.", "Your document and signature never leave your device."],
+          ["Drop the PDF and create your signature.", "Pick the page and click where the signature goes.", "Save and download the signed PDF."],
+          """<h2>Is this a legally binding e-signature?</h2><p>This adds a visual signature image — the same as signing a printout and scanning it. That's accepted for many everyday documents, but some contracts and official filings require a certified digital signature (e.g. DSC or Aadhaar eSign in India). Check what the recipient accepts.</p>""",
+          [("Is my signature stored?", "No. It exists only in your browser tab and is discarded when you close it."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("unlock-pdf", "unlock", "Unlock PDF",
+          "Unlock PDF — Remove PDF Password & Restrictions Free",
+          "Remove the password or print/copy/edit restrictions from a PDF you're allowed to open. Keeps text and quality. Free, private, no upload.",
+          "Unlock a PDF",
+          "Remove the open password or the printing, copying and editing restrictions from your own PDFs — such as bank statements and e-bills.",
+          ["Removes restrictions from PDFs that open without a password.", "Removes the open password when you enter it.",
+           "Text, links and quality are kept — pages are not turned into images.", "The PDF and password never leave your device."],
+          ["Drop the PDF.", "Type its password if it asks for one when opening.", "Download the unlocked copy."],
+          """<h2>Only for files you're allowed to open</h2><p>This tool removes protection when you already know the password or the file opens normally. It does not crack unknown passwords. Use it only for documents you own or are authorised to modify.</p>""",
+          [("I forgot the password — can you recover it?", "No. Without the password the content can't be decrypted. Bank statements often use a combination like your date of birth or customer ID — check the email that came with it."),
+           FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("pdf-to-text", "ocr", "PDF to text (OCR)",
+          "PDF to Text — Extract Text from PDF & Scans (OCR) Free",
+          "Extract text from any PDF, including scanned pages, with built-in OCR. Copy or download as .txt. Free, private — runs in your browser.",
+          "PDF to text with OCR",
+          "Copy the text out of any PDF — digital or scanned. Pages without a text layer are recognised with OCR, right on your device.",
+          ["Reads the text layer instantly when the PDF has one.", "Scanned pages are recognised with OCR (English).",
+           "Copy to clipboard or download a .txt file.", "Nothing is uploaded — OCR runs in your browser."],
+          ["Drop your PDF.", "Click “Extract text” (tick “Always use OCR” for messy text layers).", "Copy or download the text."],
+          """<h2>How accurate is OCR?</h2><p>Clean, straight scans at 200–300 DPI usually reach very high accuracy. Handwriting, low-resolution photos and complex layouts are harder — always proofread important text.</p>""",
+          [("Which languages are supported?", "English for now. Other languages may be added later."), FAQ_PDF_PRIVATE],
+          "pdf"),
+    _tool("image-to-text", "ocr", "Image to text (OCR)",
+          "Image to Text — Extract Text from Photos (OCR) Free",
+          "Copy text from photos, screenshots and scans with OCR in your browser. JPG, PNG, WebP, HEIC. Free, private — images are never uploaded.",
+          "Image to text (OCR)",
+          "Photograph a document or take a screenshot and turn it into editable text — privately, on your device.",
+          ["Works with JPG, PNG, WebP and HEIC photos and screenshots.", "Batch: drop several images and get all the text at once.",
+           "Copy or download as .txt.", "Runs entirely in your browser."],
+          ["Drop your images.", "Click “Extract text”.", "Copy or download."],
+          """<h2>Tips for better results</h2><ul><li>Photograph the page flat, in good light, filling the frame.</li><li>Avoid shadows and angles; crop to the text.</li><li>Screenshots work best of all.</li></ul>""",
+          [("Can it read handwriting?", "Neat print-style handwriting sometimes works, but OCR is designed for printed text."), FAQ_IMG_PRIVACY],
+          "image", ocr_images=True),
+]
+
+_orig_all_pages = all_pages
+
+
+def all_pages():
+    pages = _orig_all_pages()
+    i = max(k for k, p in enumerate(pages) if p.get("group") == "tool") + 1
+    pages[i:i] = NEW_TOOLS
+    for p in NEW_TOOLS:
+        p.setdefault("mode", "recommended")
     return pages
