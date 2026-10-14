@@ -10,6 +10,7 @@
 const EVENTS = new Set([
   'files_added', 'compressed', 'error', 'share', 'zip_download',
   'images_added', 'image_resized', 'merged', 'split', 'images_to_pdf', 'pdf_to_images',
+  'dpi_changed', 'organized', 'page_numbers', 'watermarked', 'signed', 'unlocked', 'ocr',
 ]);
 // Search-engine ownership files, served verbatim. Cloudflare's clean-URL handling would
 // otherwise redirect *.html, which can make verification fail. Only these exact tokens.
