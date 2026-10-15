@@ -123,6 +123,65 @@ TARGETS = {
 }
 
 
+
+# Typical size of one page *after* good compression (KB): (low, typical, high).
+PAGE_COST = [
+    ("Text-only page (exported from Word, Google Docs, a website)", 5, 15, 25),
+    ("Scanned page in grayscale (letters, forms, certificates)", 15, 60, 90),  # 15 KB ≈ one page at ~70 DPI
+    ("Scanned page in colour (stamps, photos, coloured backgrounds)", 80, 150, 250),
+    ("Full-page colour photo or brochure page", 150, 220, 400),
+]
+
+
+def _fit_range(kb, lo, hi, text=False):
+    a, b = int(kb // hi), int(kb // lo)
+    if text and a < 1 <= b:  # text is never re-encoded, so short files fit without any quality loss
+        return f"1–{b}", "✅ Short documents usually fit, text stays sharp"
+    if b < 1:
+        return "under 1", "❌ Unlikely — even one page needs heavy quality loss"
+    if a < 1:
+        return (f"0–{b}", "⚠️ One page at most, at reduced quality" if b == 1 else "⚠️ Only a page or two, at reduced quality")
+    rng = f"{a}" if a == b else f"{a}–{b}"
+    if a >= 3:
+        return rng, "✅ Yes, comfortably"
+    return rng, "✅ Yes, if the file has only a few pages"
+
+
+def realistic_section(kb, L):
+    kb_label_in = kb
+    kb = kb // 1024 * 1000 if kb >= 1024 and kb % 1024 == 0 else kb  # the tool counts 1 MB = 1000 KB
+    rows = ""
+    for label, lo, typ, hi in PAGE_COST:
+        rng, verdict = _fit_range(kb, lo, hi, text=label.startswith("Text"))
+        rows += f"<tr><td>{label}</td><td>{lo}–{hi} KB</td><td>{rng}</td><td>{verdict}</td></tr>"
+    nxt = {20: 50, 50: 100, 100: 200, 150: 200, 200: 300, 300: 500, 500: 1024, 1024: 2048, 2048: 5120, 5120: 10240}.get(kb_label_in)
+    nxt_link = (f'<li>Check whether your form actually allows more — if so, <a href="/compress-pdf-to-{kb_slug(nxt)}/">compress to {kb_label(nxt)}</a> for better quality.</li>'
+                if nxt else "")
+    budget = lambda n: f"{kb / n / 1000:g} MB" if kb / n >= 1000 else f"{kb / n:.0f} KB"
+    return f"""
+<h2>Is {L} realistic for my PDF?</h2>
+<p>It depends almost entirely on <strong>what is on the pages and how many pages there are</strong> — not on the tool.
+Text is tiny; scanned and photographed pages are images, and every page shares the same {L}. Typical sizes per page
+after good compression:</p>
+<div class="tablewrap"><table><thead><tr><th>What your PDF contains</th><th>Size per page</th><th>Pages that fit in {L}</th><th>Realistic?</th></tr></thead>
+<tbody>{rows}</tbody></table></div>
+<p class="muted small">Estimates for typical A4/Letter pages at readable quality; your file may differ. The tool always
+tells you whether it reached {L}.</p>
+<h3>10-second self-check</h3>
+<p>Divide {L} by your number of pages. With 1 page you have {budget(1)} per page, with 2 pages {budget(2)}, with
+5 pages {budget(5)}. Then compare: <strong>about 15 KB</strong> per page is enough for text, <strong>about 60 KB</strong>
+for a grayscale scan and <strong>about 150–220 KB</strong> for colour scans or photos.{" (We count 1 MB as 1,000 KB, so it also passes stricter checks.)" if kb_label_in >= 1024 else ""}</p>
+<h3>If it won't fit</h3>
+<ul>
+<li>Tick <strong>Grayscale</strong> under “More options” — for scans it often halves the size.</li>
+<li>Upload only the pages the form needs: <a href="/delete-pdf-pages/">delete pages</a> or <a href="/split-pdf/">split the PDF</a>.</li>
+<li>Re-scan at 150 DPI in grayscale instead of 300 DPI colour, and crop to the paper's edges.</li>
+<li>Photos of documents? Crop them first, then use <a href="/jpg-to-pdf/">JPG to PDF</a>.</li>
+{nxt_link}
+</ul>
+"""
+
+
 def target_page(kb):
     t = TARGETS[kb]
     L, s = kb_label(kb), kb_slug(kb)
@@ -141,7 +200,7 @@ def target_page(kb):
         facts=[
             f"Guarantees the output is at or below {L} when possible (counting 1 KB = 1000 bytes, so it passes either convention), and tells you if it isn't.",
             "Text and links stay selectable; only images are re-encoded unless flattening is needed.",
-            f"Rough capacity of {L}: ~{text_pages} text-only pages, ~{gray_pages} grayscale scanned page(s), {color_txt} full-colour photo page(s).",
+            f"Rough capacity of {L}: ~{text_pages} text-only pages, ~{gray_pages} grayscale scanned page(s), {color_txt} full-colour photo page(s) — see “Is {L} realistic?” below.",
             "Runs in your browser: files are never uploaded. Free, unlimited, no watermark.",
         ],
         steps=[
@@ -153,6 +212,7 @@ def target_page(kb):
         body=f"""
 <h2>Who needs a PDF under {L}?</h2>
 <p>{t['who']}</p>
+{realistic_section(kb, L)}
 <h2>Tips to fit {L} with the best quality</h2>
 <ul>{''.join(f'<li>{x}</li>' for x in t['tips'])}</ul>
 <h2>How we hit {L} exactly</h2>
