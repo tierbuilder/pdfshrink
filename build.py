@@ -221,6 +221,11 @@ def cat_of(q):
     return q.get("cat") or CAT.get(q["slug"], "pdf")
 
 
+def first_sentence(text):
+    """First sentence of a description — ignores abbreviations like "e.g." and decimals like "3.5"."""
+    return re.split(r"(?<!e\.g)(?<!i\.e)\.\s+(?=[A-Z])", text, maxsplit=1)[0].rstrip(".") + "."
+
+
 def tools_grid(groups):
     """Home/404 grid of every tool, grouped by category."""
     sections = [("form", "Photos & documents for online forms"), ("pdf", "PDF tools"), ("image", "Image tools")]
@@ -228,7 +233,7 @@ def tools_grid(groups):
     html_ = '<section aria-labelledby="alltools"><h2 id="alltools">All free tools</h2>'
     for cat, title in sections:
         items = (pdf if cat == "pdf" else []) + [
-            (path_for(q["slug"]), q["crumb"], BLURBS.get(q["slug"]) or q["desc"].split(". ")[0] + ".")
+            (path_for(q["slug"]), q["crumb"], BLURBS.get(q["slug"]) or first_sentence(q["desc"]))
             for q in groups["tool"] if cat_of(q) == cat]
         cards = "".join(f'<a class="card toolcard" href="{h}"><h3>{e(t)}</h3><p>{e(b)}</p></a>' for h, t, b in items)
         html_ += f'<h3 class="gridhead">{title}</h3><div class="grid">{cards}</div>'

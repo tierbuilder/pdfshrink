@@ -27,7 +27,9 @@
     btn.addEventListener('click', () => {
       const next = order[(order.indexOf(get()) + 1) % order.length];
       try { localStorage.setItem(KEY, next); } catch (e) { /* private mode: applies for this page only */ }
+      root.classList.add('theme-switching'); // switch colours instantly, without mid-fade flicker
       apply(next);
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
       sync();
     });
     sync();
