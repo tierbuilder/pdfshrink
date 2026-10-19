@@ -179,7 +179,8 @@ def footer(groups):
 {col("Use cases", groups["use"] + groups["device"])}
 {col("Learn &amp; legal", groups["guide"] + groups["legal"])}
 </div><p>© {date.today().year} {e(SITE_NAME)} · Free PDF and image tools that run in your browser. Your files never leave your device.
-Not affiliated with any government body, exam authority or brand mentioned on this site.</p></div></footer>"""
+Not affiliated with any government body, exam authority or brand mentioned on this site.</p>
+<p class="small"><strong>Disclaimer:</strong> {e(SITE_NAME)} is a personal hobby project, provided free and “as is”, without warranty of any kind. Always check the result and keep your original files. <a href="/terms/#disclaimer" style="display:inline">Full terms</a>.</p></div></footer>"""
 
 
 def fill_contact(text, plain=False):

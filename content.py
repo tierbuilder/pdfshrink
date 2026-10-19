@@ -858,6 +858,9 @@ ABOUT = dict(
            "Built on open-source libraries: pdf-lib, pdf.js, pako and JSZip."],
     steps=None, faqs=[],
     body="""
+<h2>A hobby project</h2>
+<p>This site is a personal hobby project — free, with no ads, no accounts and no paid tier. It's offered “as is”,
+without any warranty; see the <a href="/terms/#disclaimer">terms</a>.</p>
 <h2>Why we built this</h2>
 <p>Millions of people every day need to shrink a document or photo to fit an upload limit. The popular tools make
 you upload personal documents to a server, then limit you to a couple of files a day. Modern browsers are powerful
@@ -889,7 +892,7 @@ TERMS = dict(
     title="Terms of Use", desc="Terms of use for the free PDF and image tools.",
     h1="Terms of use", lead="Plain-language terms. By using the site you agree to them.",
     facts=["Free to use for personal and commercial purposes.",
-           "Provided “as is” without warranty — keep your original files.",
+           "A personal hobby project, provided free and “as is”, without warranty of any kind — keep your original files.",
            "You are responsible for having the right to process the files you use.",
            "Not affiliated with any government, exam body or third-party brand mentioned."],
     steps=None, faqs=[],
@@ -899,9 +902,17 @@ select. Output is generated on your device.</p>
 <h2>2. Acceptable use</h2><p>Use the tools only with files you own or are authorised to process. Don't use them to
 infringe copyright, to circumvent security measures or access controls you aren't authorised to remove, or to create
 forged or fraudulent documents.</p>
-<h2>3. No warranty</h2><p>The tools are provided “as is”. Compression and conversion can change how a document
-looks; always check the output and keep your original. To the extent permitted by law, we are not liable for any
-loss arising from use of the site, including rejected uploads or missed deadlines.</p>
+<h2 id="disclaimer">3. Hobby project — no warranty</h2>
+<p>This site is a <strong>personal hobby project</strong>, built and run in spare time. It is not a commercial service
+and comes with no support commitment, uptime guarantee or service-level agreement.</p>
+<p>The tools are provided <strong>“as is” and “as available”, without warranty of any kind</strong>, express or implied —
+including any warranty of merchantability, fitness for a particular purpose, accuracy, or non-infringement. There is
+no guarantee that a tool will work for your file, that the output will meet a form's or authority's requirements, or
+that size limits, dimensions and other figures shown on the site are correct for your situation.</p>
+<p>Compression and conversion can change how a document looks. Always check the output and keep your original
+file. You use the site at your own risk. To the extent permitted by law, the author is not liable for any direct or
+indirect loss arising from use of the site — including lost or damaged files, rejected uploads, missed deadlines or
+rejected applications.</p>
 <h2>4. Third parties and trademarks</h2><p>Names of services such as Gmail, Outlook, iPhone, Android, macOS or
 Windows are used only to describe compatibility. They are trademarks of their respective owners, who do not endorse
 this site. Size limits mentioned for forms are examples, not official requirements.</p>
