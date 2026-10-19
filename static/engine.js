@@ -130,6 +130,9 @@
     const im = get('ImageMask');
     if (im instanceof PDFBool && im.asBoolean()) return null;
     if (d.get(PDFName.of('Decode'))) return null;
+    if (d.get(PDFName.of('Mask')) instanceof PDFArray) return null; // colour-key transparency needs exact colours
+    const sm = ctx.lookup(d.get(PDFName.of('SMask')));
+    if (sm && sm.dict && sm.dict.get(PDFName.of('Matte'))) return null; // pre-multiplied: image and mask must keep identical size
     const w = get('Width') && get('Width').asNumber(), h = get('Height') && get('Height').asNumber();
     if (!w || !h || w * h < 10000) return null;
 
@@ -236,7 +239,7 @@
       Type: 'XObject', Subtype: 'Image', Width: nw, Height: nh,
       ColorSpace: 'DeviceRGB', BitsPerComponent: 8, Filter: 'DCTDecode', Length: jpg.length,
     });
-    for (const k of ['SMask', 'Interpolate', 'Intent']) {
+    for (const k of ['SMask', 'Mask', 'Interpolate', 'Intent']) {
       const v = stream.dict.get(PDFName.of(k));
       if (v) nd.set(PDFName.of(k), v);
     }
@@ -288,12 +291,24 @@
     const IMAGE = PDFName.of('Image'), SUBTYPE = PDFName.of('Subtype'), FILTER = PDFName.of('Filter'), TYPE = PDFName.of('Type');
     const SKIP_TYPES = new Set(['XRef', 'ObjStm', 'Metadata']);
     let images = 0, done = 0;
+    // Images used as another image's transparency (/SMask) or stencil (/Mask) must stay exactly as they are:
+    // a soft mask has to remain 1-channel grayscale, and viewers refuse to draw an image whose mask was
+    // turned into an RGB JPEG — which made scanned signatures and stamps disappear.
+    const maskRefs = new Set();
+    for (const [, o] of objs) {
+      if (!(o instanceof PDFRawStream) || o.dict.get(SUBTYPE) !== IMAGE) continue;
+      for (const k of ['SMask', 'Mask']) {
+        const m = o.dict.get(PDFName.of(k));
+        if (m instanceof PDFLib.PDFRef) maskRefs.add(m.tag);
+      }
+    }
     for (let i = 0; i < objs.length; i++) {
       const [ref, obj] = objs[i];
       if (!(obj instanceof PDFRawStream)) continue;
       const d = obj.dict;
       if (d.get(SUBTYPE) === IMAGE) {
-        if (opt.images === false) continue;
+        if (opt.images === false || maskRefs.has(ref.tag)) continue;
+        if (d.get(PDFName.of('SMaskInData'))) continue;
         images++;
         try {
           const ns = await recompressImage(ctx, obj, opt);
