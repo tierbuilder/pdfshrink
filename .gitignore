@@ -8,3 +8,4 @@ node_modules/
 static/vendor/tesseract/eng.traineddata.gz
 static/vendor/libheif-bundle.js
 static/vendor/pdf-lib-cantoo.min.js
+dist-scan/

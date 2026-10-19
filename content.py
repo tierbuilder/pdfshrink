@@ -1424,3 +1424,51 @@ def all_pages():
     for p in NEW_TOOLS + extra:
         p.setdefault("mode", "recommended")
     return pages
+
+
+# ================================================================ make PDF look scanned
+SCAN_PAGE = _tool(
+    "make-pdf-look-scanned", "scan", "Make PDF look scanned",
+    "Make PDF Look Scanned Online Free — Realistic Scan Effect",
+    "Turn a digital PDF or photos into a realistic scanned-looking PDF: tilt, grain, paper tone, grayscale or photocopy. Live preview, no upload, free.",
+    "Make a PDF look scanned",
+    "Give a digital PDF the look of a real scan — slight tilt, paper grain, warm paper tone, scanner shadow — with a live preview. Everything runs on your device.",
+    ["Presets: Natural scan, Office copier (black & white), Old fax, Phone scan and Clean colour.",
+     "Fine-tune tilt, grain, blur, brightness, contrast, paper tone and texture, with a live preview that matches the download exactly.",
+     "Each page gets its own slightly different tilt and grain, like a real scanner; 🎲 re-rolls the randomness.",
+     "Works with PDFs and with photos (JPG, PNG); output is a PDF at 110–300 DPI.",
+     "Processed in your browser — your document is never uploaded."],
+    ["Drop your PDF (or photos of pages).", "Pick a style and adjust the sliders while watching the preview.", "Click “Make it look scanned” and download the PDF."],
+    """
+<h2>Why make a PDF look scanned?</h2>
+<p>Some offices and portals still expect documents that were printed, signed and scanned. If you signed a document
+digitally, or only have the digital original, this gives it the familiar look of a scan in seconds — without a
+printer or scanner.</p>
+<h2>Which style should I use?</h2>
+<div class="tablewrap"><table><thead><tr><th>Style</th><th>Looks like</th><th>Good for</th></tr></thead><tbody>
+<tr><td>Natural scan</td><td>Grayscale flatbed scan, light paper tone</td><td>Most documents</td></tr>
+<tr><td>Office copier</td><td>High-contrast black &amp; white photocopy</td><td>Forms and text-only pages</td></tr>
+<tr><td>Old fax</td><td>Grainy, yellowed, a little blurry</td><td>A deliberately aged look</td></tr>
+<tr><td>Phone scan</td><td>Colour, slightly tilted, phone-app style</td><td>Receipts, IDs, mobile-scanned look</td></tr>
+<tr><td>Clean colour</td><td>Crisp colour scan with minimal effects</td><td>Certificates and documents with colour stamps</td></tr>
+</tbody></table></div>
+<h2>Use it responsibly</h2>
+<p>This tool changes how a document <em>looks</em>, not what it is. Don't use it to misrepresent a document's origin
+where that matters, and follow the rules of whoever you're submitting to. The text in the output is an image, so it
+is no longer selectable — keep your original file.</p>
+""",
+    [("Is the text still selectable after scanning?", "No — just like a real scan, each page becomes an image. Use PDF to text (OCR) if you need the text later."),
+     ("Will the file be large?", "A scanned-style page is roughly 100–300 KB at 150 DPI. Use “Small” file size or 110 DPI for less, or run the result through Compress PDF."),
+     ("Is my document uploaded?", "No. The pages are rendered and processed in your browser; nothing is sent to a server."),
+     ("Does it work on phones?", "Yes, in any modern mobile browser. Large documents at 300 DPI may take a little longer on older phones.")],
+    "pdf")
+
+_prev_all_pages_scan = all_pages
+
+
+def all_pages():
+    pages = _prev_all_pages_scan()
+    i = max(k for k, p in enumerate(pages) if p.get("group") == "tool") + 1
+    pages.insert(i, SCAN_PAGE)
+    SCAN_PAGE.setdefault("mode", "recommended")
+    return pages

@@ -237,5 +237,48 @@ def render_tool(p):
         return img2pdf_tool(p.get("pdf_max_kb", ""))
     if t == "ocr":
         return ocr_tool(p.get("ocr_images", False))
+    if t == "scan":
+        return scan_tool(p.get("preset", "natural"))
     return {"merge": merge_tool, "split": split_tool, "pdf2img": pdf2img_tool, "dpi": dpi_tool, "organize": organize_tool,
             "pagenum": pagenum_tool, "watermark": watermark_tool, "sign": sign_tool, "unlock": unlock_tool}[t]()
+
+
+def scan_tool(preset="natural"):
+    def rng(id_, label, lo, hi, step, unit=""):
+        return (f'<div class="sc-field"><label for="sc-{id_}">{label}</label>'
+                f'<input type="range" id="sc-{id_}" min="{lo}" max="{hi}" step="{step}" data-unit="{unit}">'
+                f'<output for="sc-{id_}"></output></div>')
+    presets = [("natural", "Natural scan"), ("copier", "Office copier"), ("fax", "Old fax"), ("phone", "Phone scan"), ("clean", "Clean colour")]
+    pre = "".join(f'<button type="button" role="radio" aria-checked="{str(k == preset).lower()}" data-preset="{k}">{label}</button>'
+                  for k, label in presets)
+    return f"""<section class="tool" id="tool" data-tool="scan" data-preset="{preset}" aria-label="Make PDF look scanned">
+{dropzone("application/pdf,.pdf,image/*", True, 'Drop a PDF or images here or <span class="link">choose files</span>', "Tap to choose a PDF or images")}
+<p class="muted" id="sc-status" aria-live="polite" hidden></p>
+<div id="sc-work" hidden>
+<p class="sc-file"><strong id="sc-file"></strong></p>
+<div class="seg sc-presets" role="radiogroup" aria-label="Scan style">{pre}</div>
+<div class="sc-layout">
+<div class="sc-controls">
+<div class="sc-field"><label for="sc-color">Colour</label><select id="sc-color"><option value="gray">Grayscale</option><option value="bw">Black &amp; white (photocopy)</option><option value="color">Colour</option></select></div>
+{rng("rotate", "Tilt", 0, 3, 0.1, "°")}
+{rng("noise", "Grain", 0, 80, 1)}
+{rng("blur", "Blur", 0, 2, 0.05)}
+{rng("brightness", "Brightness", -40, 40, 1)}
+{rng("contrast", "Contrast", -30, 60, 1)}
+{rng("yellow", "Paper tone", 0, 100, 1)}
+{rng("texture", "Paper texture", 0, 100, 1)}
+<label class="check"><input type="checkbox" id="sc-edge"> Scanner edge shadow</label>
+<div class="sc-field"><label for="sc-dpi">Resolution</label><select id="sc-dpi"><option value="110">110 DPI (smallest)</option><option value="150">150 DPI (standard)</option><option value="200">200 DPI (sharp)</option><option value="300">300 DPI (print)</option></select></div>
+<div class="sc-field"><label for="sc-quality">File size</label><select id="sc-quality"><option value="0.5">Small</option><option value="0.62">Balanced</option><option value="0.8">High quality</option></select></div>
+</div>
+<div class="sc-view">
+<div class="sc-viewbar"><label for="sc-page" class="sr-only">Preview page</label><select id="sc-page"></select>
+<label class="check sc-inline"><input type="checkbox" id="sc-compare"> Show original</label>
+<button type="button" class="btn btn-ghost btn-sm" id="sc-shuffle" title="New random tilt and grain">🎲 Re-roll</button></div>
+<div class="sc-canvases"><canvas id="sc-before" hidden aria-label="Original page"></canvas><canvas id="sc-preview" aria-label="Scanned preview"></canvas></div>
+</div>
+</div>
+<div class="bulk"><button type="button" class="btn" id="sc-go">Make it look scanned</button></div>
+<div class="result" id="result" aria-live="polite" hidden></div>
+</div>
+</section>"""

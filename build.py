@@ -399,11 +399,13 @@ def render(p, groups, assets, alts=None, lang_pages=None):
     third = {"compress": "🎯 Exact size", "image": "🎯 Exact KB", "merge": "↕ Reorder", "split": "✂ Any range",
              "img2pdf": "📄 A4 / Letter", "pdf2img": "🖼 Up to 300 DPI", "dpi": "✓ Lossless", "organize": "⟳ Thumbnails",
              "pagenum": "# 4 formats", "watermark": "✎ Any text", "sign": "✍ Draw or type", "unlock": "✓ Keeps text",
-             "ocr": "🔍 Built-in OCR"}.get(p.get("tool"), "")
+             "ocr": "🔍 Built-in OCR", "scan": "👁 Live preview"}.get(p.get("tool"), "")
     badges = (f'<ul class="badges"><li>{tr("🔒 No upload")}</li><li>{tr("∞ No limits")}</li><li>{tr(third)}</li><li>{tr("✓ No sign-up")}</li></ul>'
               if p.get("tool") else "")
     if p.get("tool") == "compress":
         scripts = f'<script src="{assets["engine"]}" defer></script><script src="{assets["app"]}" defer></script>'
+    elif p.get("tool") == "scan":
+        scripts = f'<script src="{assets["engine"]}" defer></script><script src="{assets["scan"]}" defer></script>'
     elif p.get("tool"):
         scripts = f'<script src="{assets["engine"]}" defer></script><script src="{assets["tools"]}" defer></script>'
     else:
@@ -549,7 +551,8 @@ def main():
               "engine": fingerprint(STATIC / "engine.js", "engine.js"),
               "app": fingerprint(STATIC / "app.js", "app.js"),
               "tools": fingerprint(STATIC / "tools.js", "tools.js"),
-              "theme": fingerprint(STATIC / "theme.js", "theme.js")}
+              "theme": fingerprint(STATIC / "theme.js", "theme.js"),
+              "scan": fingerprint(STATIC / "scan.js", "scan.js")}
     pages = all_pages()
     groups = {}
     for p in pages:
@@ -688,4 +691,8 @@ self.addEventListener('fetch', (e) => {{
 
 
 if __name__ == "__main__":
-    main()
+    if "--site" in sys.argv and sys.argv[sys.argv.index("--site") + 1] == "scan":
+        import scan_site
+        scan_site.build()
+    else:
+        main()

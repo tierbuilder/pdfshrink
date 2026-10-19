@@ -1,0 +1,19 @@
+// Standalone scanner-effect site (same repo, separate Cloudflare Worker).
+// Build: python3 build.py --site scan   Deploy: npx wrangler deploy -c wrangler.scan.jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "scaneffect",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist-scan",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "analytics_engine_datasets": [
+    { "binding": "EVENTS", "dataset": "scaneffect" }
+  ],
+  "observability": { "logs": { "enabled": true, "invocation_logs": true, "persist": true } }
+}

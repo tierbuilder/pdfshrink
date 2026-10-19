@@ -159,3 +159,15 @@ bottleneck, not on-page SEO.
   `CF_ACCOUNT_ID=... CF_API_TOKEN=... python3 scripts/stats.py 7`
   The token needs **Account Analytics: Read**.
 - Visit counts come from Cloudflare Web Analytics: Worker → Metrics → enable.
+
+## Make PDF look scanned: two deployments from one codebase
+
+The effects engine is `static/scan.js`, and its markup is `scan_tool()` in `tools_html.py`. It is used in two places:
+
+1. **Inside PDF Shrink** at `/make-pdf-look-scanned/`. This is the normal build and deploy.
+2. **A standalone site** built by `scan_site.py`. It has its own branding (blue), its own wording (so search engines
+   don't treat it as a duplicate), and its own privacy and terms pages, sitemap and CSP. It links back to PDF Shrink.
+   - Build: `python3 build.py --site scan`, which writes `dist-scan/`.
+   - Deploy: `npx wrangler deploy -c wrangler.scan.jsonc` (Worker `scaneffect`, analytics dataset `scaneffect`).
+   - Environment variables: `SCAN_SITE_URL` (default `https://scan.gumber.ai`), `SCAN_SITE_NAME` (default
+     `ScanEffect`), `CONTACT_EMAIL`.
