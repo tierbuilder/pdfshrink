@@ -12,6 +12,15 @@
  */
 (function () {
   'use strict';
+  // i18n: translated pages embed <script type="application/json" id="i18n">{"English text {x}": "…"}</script>.
+  // t() returns the translation (or the English key) with {placeholders} filled in. Shared via window.__t.
+  const I18N = (() => { try { const el = document.getElementById('i18n'); return el ? JSON.parse(el.textContent) : {}; } catch (e) { return {}; } })();
+  function t(key, vars) {
+    let s = Object.prototype.hasOwnProperty.call(I18N, key) ? I18N[key] : key;
+    if (vars) for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+    return s;
+  }
+  window.__t = t;
   const VENDOR = '/vendor/';
   const loaded = {};
   function loadScript(src) {
@@ -381,7 +390,7 @@
     const status = (msg, frac) => onStatus && onStatus(msg, frac);
     if (isEncrypted(bytes)) {
       return { bytes: original, method: 'original', hit: false, locked: true,
-        note: 'This PDF needs a password to open. Unlock it first (Unlock PDF tool), then compress the unlocked copy.' };
+        note: t('This PDF needs a password to open. Unlock it first (Unlock PDF tool), then compress the unlocked copy.') };
     }
     const base = { gray: !!options.gray, stripMeta: options.stripMeta !== false };
     let encrypted = false;
@@ -391,24 +400,24 @@
     };
     const pick = (r, extra) => {
       if (!r || r.error || r.bytes.length >= original.length) {
-        return Object.assign({ bytes: original, method: 'original', note: 'This PDF is already well optimized — we kept the original.' }, extra);
+        return Object.assign({ bytes: original, method: 'original', note: t('This PDF is already well optimized — we kept the original.') }, extra);
       }
       return Object.assign(r, extra);
     };
 
     if (!options.targetBytes) {
       if (options.preset === 'flatten') {
-        status('Flattening pages…', 0);
-        const r = await tryRun(() => flattenCompress(bytes, Object.assign({ dpi: 110, quality: 0.55 }, base), (f) => status('Flattening pages…', f)));
+        status(t('Flattening pages…'), 0);
+        const r = await tryRun(() => flattenCompress(bytes, Object.assign({ dpi: 110, quality: 0.55 }, base), (f) => status(t('Flattening pages…'), f)));
         return pick(r);
       }
       const p = options.preset === 'lossless' ? { images: false } : PRESETS[options.preset] || PRESETS.recommended;
-      status('Optimizing…', 0);
-      const r = await tryRun(() => smartCompress(bytes, Object.assign({}, base, p), (f) => status('Optimizing…', f)));
+      status(t('Optimizing…'), 0);
+      const r = await tryRun(() => smartCompress(bytes, Object.assign({}, base, p), (f) => status(t('Optimizing…'), f)));
       if (r.error && encrypted) {
-        status('Protected PDF — flattening…', 0);
-        const fr = await tryRun(() => flattenCompress(bytes, Object.assign({ dpi: 120, quality: 0.6 }, base), (f) => status('Flattening…', f)));
-        return pick(fr, { note: 'This PDF has security restrictions, so pages were flattened.' });
+        status(t('Protected PDF — flattening…'), 0);
+        const fr = await tryRun(() => flattenCompress(bytes, Object.assign({ dpi: 120, quality: 0.6 }, base), (f) => status(t('Flattening…'), f)));
+        return pick(fr, { note: t('This PDF has security restrictions, so pages were flattened.') });
       }
       if (r.error) throw r.error;
       return pick(r);
@@ -417,32 +426,32 @@
     const target = options.targetBytes;
     if (original.length <= target) {
       const ll = isEncrypted(bytes) ? null : await tryRun(() => smartCompress(bytes, Object.assign({}, base, { images: false })));
-      return pick(ll, { hit: true, note: 'Your file was already under the target size' + (ll && !ll.error && ll.bytes.length < original.length ? ' — we still removed hidden waste.' : '.') });
+      return pick(ll, { hit: true, note: ll && !ll.error && ll.bytes.length < original.length ? t('Your file was already under the target size — we still removed hidden waste.') : t('Your file was already under the target size.') });
     }
     let smallest = null;
     if (!isEncrypted(bytes)) {
-      status('Trying lossless cleanup…', 0.02);
+      status(t('Trying lossless cleanup…'), 0.02);
       const ll = await tryRun(() => smartCompress(bytes, Object.assign({}, base, { images: false })));
       if (!ll.error) {
         smallest = ll;
         if (ll.bytes.length <= target) return pick(ll, { hit: true });
         const s = await searchLadder(SMART_LADDER, (o) => smartCompress(bytes, Object.assign({}, base, o)), target,
-          (i) => status('Re-encoding images (level ' + (i + 1) + '/' + SMART_LADDER.length + ')…', 0.1 + i * 0.05));
+          (i) => status(t('Re-encoding images (level {i}/{n})…', { i: i + 1, n: SMART_LADDER.length }), 0.1 + i * 0.05));
         if (s.best) return pick(s.best, { hit: true });
         if (s.smallest && s.smallest.bytes.length < smallest.bytes.length) smallest = s.smallest;
       }
     }
     if (options.allowFlatten !== false) {
       const s = await searchLadder(FLATTEN_LADDER, (o) => flattenCompress(bytes, Object.assign({}, base, o, { gray: base.gray || o.gray })),
-        target, (i) => status('Flattening pages (level ' + (i + 1) + '/' + FLATTEN_LADDER.length + ')…', 0.5 + i * 0.05));
-      if (s.best) return pick(s.best, { hit: true, note: 'Pages were flattened to images to reach the target — text is no longer selectable.' });
+        target, (i) => status(t('Flattening pages (level {i}/{n})…', { i: i + 1, n: FLATTEN_LADDER.length }), 0.5 + i * 0.05));
+      if (s.best) return pick(s.best, { hit: true, note: t('Pages were flattened to images to reach the target — text is no longer selectable.') });
       if (s.smallest && (!smallest || s.smallest.bytes.length < smallest.bytes.length)) smallest = s.smallest;
     }
     return pick(smallest, {
       hit: false,
       note: options.allowFlatten === false
-        ? 'Could not reach the target without flattening. Enable “Allow flattening” or split the PDF.'
-        : 'Could not reach the target — this is the smallest readable version. Try splitting the PDF into fewer pages.',
+        ? t('Could not reach the target without flattening. Enable “Allow flattening” or split the PDF.')
+        : t('Could not reach the target — this is the smallest readable version. Try splitting the PDF into fewer pages.'),
     });
   }
 

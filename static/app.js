@@ -8,6 +8,7 @@
   const input = $('#file'), drop = $('#drop'), list = $('#files'), bulk = $('#bulk');
   const tsize = $('#tsize'), tunit = $('#tunit'), targetRow = $('#target-row'), rerun = $('#rerun');
   const items = [];
+  const t = window.__t || ((s) => s);
   let mode = tool.dataset.mode || 'recommended';
   let busy = false;
 
@@ -80,13 +81,13 @@
 
   function addFiles(fileList) {
     const files = Array.from(fileList).filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-    if (!files.length) { flash('Please choose PDF files.'); return; }
+    if (!files.length) { flash(t('Please choose PDF files.')); return; }
     for (const f of files) {
       const li = document.createElement('li');
       li.className = 'item';
       li.innerHTML =
         '<div class="item-top"><span class="name">' + esc(f.name) + '</span><span class="sizes">' + fmt(f.size) + '</span></div>' +
-        '<div class="bar"><span></span></div><div class="item-bottom"><span class="status">Waiting…</span><span class="actions"></span></div>';
+        '<div class="bar"><span></span></div><div class="item-bottom"><span class="status">' + t('Waiting…') + '</span><span class="actions"></span></div>';
       list.appendChild(li);
       items.push({ file: f, li, result: null });
     }
@@ -131,27 +132,27 @@
       it.result = { url, name: outName, blob, size: r.bytes.length };
       const saved = Math.max(0, Math.round((1 - r.bytes.length / file.size) * 100));
       sizes.innerHTML = fmt(file.size) + ' → <b>' + fmt(r.bytes.length) + '</b>' + (saved ? ' <em class="save">−' + saved + '%</em>' : '');
-      let msg = r.locked ? '🔒 Password-protected' : r.method === 'original' ? 'Kept original' : r.method === 'flatten' ? 'Done (pages flattened)' : 'Done — text & links kept';
-      if (opts.targetBytes) msg = (r.hit ? '✓ Under ' : '✗ Above ') + tsize.value + ' ' + tunit.value + ' · ' + msg;
+      let msg = t(r.locked ? '🔒 Password-protected' : r.method === 'original' ? 'Kept original' : r.method === 'flatten' ? 'Done (pages flattened)' : 'Done — text & links kept');
+      if (opts.targetBytes) msg = t(r.hit ? '✓ Under {x}' : '✗ Above {x}', { x: tsize.value + ' ' + tunit.value }) + ' · ' + msg;
       st.textContent = msg + ' · ' + ((performance.now() - t0) / 1000).toFixed(1) + 's';
       if (r.note) st.title = r.note;
       li.classList.add(r.locked || (opts.targetBytes && !r.hit) ? 'miss' : 'done');
-      actions.innerHTML = '<a class="btn btn-sm" download="' + esc(outName) + '" href="' + url + '">Download</a>';
+      actions.innerHTML = '<a class="btn btn-sm" download="' + esc(outName) + '" href="' + url + '">' + t('Download') + '</a>';
       if (r.note) {
         const n = document.createElement('p'); n.className = 'note'; n.textContent = r.note; li.appendChild(n);
-        if (r.locked) { const l = document.createElement('a'); l.href = '/unlock-pdf/'; l.textContent = ' Open Unlock PDF →'; n.appendChild(l); }
+        if (r.locked) { const l = document.createElement('a'); l.href = '/unlock-pdf/'; l.textContent = ' ' + t('Open Unlock PDF →'); n.appendChild(l); }
       }
       track('compressed', { mode: opts.targetBytes ? 'target' : opts.preset, method: r.method, saved, hit: r.hit !== false });
     } catch (e) {
       console.error(e);
       li.classList.add('err');
-      st.textContent = 'Could not read this PDF. It may be damaged or password-protected (open password).';
+      st.textContent = t('Could not read this PDF. It may be damaged or password-protected (open password).');
       track('error', { msg: String(e && e.message).slice(0, 80) });
     }
   }
 
   $('#zip').addEventListener('click', async () => {
-    const btn = $('#zip'); btn.disabled = true; btn.textContent = 'Zipping…';
+    const btn = $('#zip'); btn.disabled = true; btn.textContent = t('Zipping…');
     try {
       if (!window.JSZip) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = '/vendor/jszip.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
       const zip = new JSZip(), used = new Set();
@@ -165,17 +166,17 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'compressed-pdfs.zip'; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
       track('zip_download', { count: used.size });
-    } finally { btn.disabled = false; btn.textContent = 'Download all (ZIP)'; }
+    } finally { btn.disabled = false; btn.textContent = t('Download all (ZIP)'); }
   });
   $('#clear').addEventListener('click', () => {
     items.forEach((it) => it.result && it.result.url && URL.revokeObjectURL(it.result.url));
     items.length = 0; list.innerHTML = ''; bulk.hidden = true; rerun.hidden = true;
   });
   $('#share').addEventListener('click', async () => {
-    const data = { title: document.title, text: 'Free PDF compressor that never uploads your files', url: location.origin + location.pathname };
+    const data = { title: document.title, text: t('Free PDF compressor that never uploads your files'), url: location.origin + location.pathname };
     try {
       if (navigator.share) await navigator.share(data);
-      else { await navigator.clipboard.writeText(data.url); flash('Link copied — thanks for sharing!'); }
+      else { await navigator.clipboard.writeText(data.url); flash(t('Link copied — thanks for sharing!')); }
       track('share');
     } catch (e) { /* user cancelled */ }
   });

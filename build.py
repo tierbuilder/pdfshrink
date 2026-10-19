@@ -14,7 +14,11 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import re
+
 from content import all_pages, kb_label
+from content_i18n import i18n_pages
+from i18n import LANGS, UI, js_dict, tr_for
 from tools_html import render_tool
 
 ROOT = Path(__file__).parent
@@ -127,6 +131,8 @@ def tool_html(p):
 def jsonld(p, pages_by_group):
     graph = []
     url = url_for(p["slug"])
+    lang = p.get("lang", "en")
+    in_lang = "en" if lang == "en" else LANGS[lang][2]
     if p["slug"] == "":
         graph.append({"@type": "WebSite", "@id": SITE_URL + "/#website", "url": SITE_URL + "/", "name": SITE_NAME,
                       "description": p["desc"], "inLanguage": "en"})
@@ -147,12 +153,12 @@ def jsonld(p, pages_by_group):
     if p.get("faqs"):
         graph.append({"@type": "FAQPage", "mainEntity": [
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in p["faqs"]]})
-    if p["slug"]:
+    if p["slug"] not in ("", lang):
         graph.append({"@type": "BreadcrumbList", "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Home", "item": SITE_URL + "/"},
+            {"@type": "ListItem", "position": 1, "name": tr_for(lang)("Home"), "item": url_for("" if lang == "en" else lang)},
             {"@type": "ListItem", "position": 2, "name": p["crumb"], "item": url}]})
     graph.append({"@type": "WebPage", "url": url, "name": p["title"], "description": p["desc"],
-                  "dateModified": UPDATED, "inLanguage": "en", "isPartOf": {"@id": SITE_URL + "/#website"}})
+                  "dateModified": UPDATED, "inLanguage": in_lang, "isPartOf": {"@id": SITE_URL + "/#website"}})
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, ensure_ascii=False).replace("</", "<\\/")
 
 
@@ -181,6 +187,20 @@ def footer(groups):
 </div><p>© {date.today().year} {e(SITE_NAME)} · Free PDF and image tools that run in your browser. Your files never leave your device.
 Not affiliated with any government body, exam authority or brand mentioned on this site.</p>
 <p class="small"><strong>Disclaimer:</strong> {e(SITE_NAME)} is a personal hobby project, provided free and “as is”, without warranty of any kind. Always check the result and keep your original files. <a href="/terms/#disclaimer" style="display:inline">Full terms</a>.</p></div></footer>"""
+
+
+def footer_i18n(lang, pages):
+    tr = tr_for(lang)
+    tools = "".join(f'<a href="{path_for(q["slug"])}">{e(q["crumb"])}</a>' for q in pages)
+    legal = "".join(f'<a href="{h}">{e(tr(t))}</a>' for h, t in
+                    (("/#alltools", "All tools (English)"), ("/about/", "About"), ("/contact/", "Contact"),
+                     ("/privacy/", "Privacy"), ("/terms/", "Terms")))
+    disc = tr("{name} is a personal hobby project, provided free and “as is”, without warranty of any kind. Always check the result and keep your original files.").replace("{name}", e(SITE_NAME))
+    return f"""<footer class="site"><div class="wrap"><div class="cols">
+<div><h4>{tr("Tools in this language")}</h4>{tools}</div><div><h4>{tr("Help &amp; legal")}</h4>{legal}</div>
+</div><p>© {date.today().year} {e(SITE_NAME)} · {tr("Free PDF and image tools that run in your browser. Your files never leave your device.")}
+{tr("Not affiliated with any government body, exam authority or brand mentioned on this site.")}</p>
+<p class="small"><strong>{tr("Disclaimer:")}</strong> {disc} <a href="/terms/#disclaimer" style="display:inline">{tr("Full terms")}</a>.</p></div></footer>"""
 
 
 def fill_contact(text, plain=False):
@@ -215,7 +235,73 @@ def tools_grid(groups):
     return html_ + "</section>"
 
 
-def render(p, groups, assets):
+THEME_LABELS = {"en": ("Theme: system", "Theme: light", "Theme: dark"),
+                "hi": ("थीम: सिस्टम", "थीम: लाइट", "थीम: डार्क"),
+                "pt": ("Tema: sistema", "Tema: claro", "Tema: escuro"),
+                "id": ("Tema: sistem", "Tema: terang", "Tema: gelap")}
+THEME_ICONS = ('<svg class="i-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>'
+               '<svg class="i-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+               '<svg class="i-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" fill="currentColor"/></svg>')
+LANG_LINK_NAMES = {"en": "English", "hi": "हिन्दी", "pt": "Português", "id": "Indonesia"}
+
+
+def theme_button(lang):
+    a, l, d = THEME_LABELS.get(lang, THEME_LABELS["en"])
+    return (f'<button type="button" class="theme-btn" id="theme-toggle" data-mode="auto" data-label-auto="{e(a)}" '
+            f'data-label-light="{e(l)}" data-label-dark="{e(d)}" aria-label="{e(a)}" title="{e(a)}">{THEME_ICONS}'
+            f'<span class="theme-text">{e(a)}</span></button>')
+
+
+def lang_links(p, alts):
+    """Language switcher: link to this page in each language, else to that language's home."""
+    cur = p.get("lang", "en")
+    mine = alts.get(p.get("base", p["slug"]), {})
+    out = []
+    for code in ["en", *LANGS]:
+        target = mine.get(code, "" if code == "en" else code)
+        hl = "en" if code == "en" else LANGS[code][2]
+        current = ' aria-current="true"' if code == cur else ""
+        out.append(f'<a href="{path_for(target)}" hreflang="{hl}" lang="{hl}"{current}>{LANG_LINK_NAMES[code]}</a>')
+    label = tr_for(cur)("Language")
+    return f'<nav class="langs" aria-label="{e(label)}">{"".join(out)}</nav>'
+
+
+def hreflang_tags(p, alts):
+    mine = alts.get(p.get("base", p["slug"]))
+    if not mine or len(mine) < 2:
+        return ""
+    tags = [f'<link rel="alternate" hreflang="{"en" if c == "en" else LANGS[c][2]}" href="{url_for(s)}">' for c, s in mine.items()]
+    if "en" in mine:
+        tags.append(f'<link rel="alternate" hreflang="x-default" href="{url_for(mine["en"])}">')
+    return "\n".join(tags)
+
+
+def localize(markup, lang):
+    """Translate interface strings in generated tool markup — only visible text and the
+    human-readable attributes (aria-label, placeholder, title, alt), never SVG/attribute values."""
+    d = UI.get(lang)
+    if not d:
+        return markup
+    keys = sorted((k for k in d if not k.startswith("/") and "{" not in k), key=len, reverse=True)
+
+    def sub_text(text):
+        for k in keys:
+            text = re.sub(r'(?<![^\s>])' + re.escape(k) + r'(?![^\s<])', lambda m, v=d[k]: v, text)
+        return text
+
+    def sub_attr(m):
+        return m.group(1) + sub_text(m.group(2)) + '"'
+
+    # text between tags (an opening "<span class=…>" inside a key is handled by keeping keys with markup first)
+    for k in keys:
+        if "<" in k:
+            markup = markup.replace(k, d[k])
+    markup = re.sub(r'(?<=>)([^<]+)(?=<)', lambda m: sub_text(m.group(1)), markup)
+    markup = re.sub(r'(\b(?:aria-label|placeholder|title|alt)=")([^"]*)"', sub_attr, markup)
+    return markup
+
+
+def render(p, groups, assets, alts=None, lang_pages=None):
     url = url_for(p["slug"])
     analytics = ""
     if PLAUSIBLE:
@@ -227,22 +313,29 @@ def render(p, groups, assets):
         verify += f'<meta name="google-site-verification" content="{e(GOOGLE_VERIFY)}">'
     if BING_VERIFY:
         verify += f'<meta name="msvalidate.01" content="{e(BING_VERIFY)}">'
-    crumbs = "" if not p["slug"] else f'<nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › {e(p["crumb"])}</nav>'
+    alts = alts or {}
+    lang = p.get("lang", "en")
+    tr = tr_for(lang)
+    home = path_for("" if lang == "en" else lang)
+    is_home = p["slug"] in ("", lang)
+    crumbs = "" if is_home else f'<nav class="crumbs" aria-label="Breadcrumb"><a href="{home}">{e(tr("Home"))}</a> › {e(p["crumb"])}</nav>'
     facts = "".join(f"<li>{e(f)}</li>" for f in p["facts"])
     steps = ""
     if p.get("steps"):
-        steps = "<section><h2>How to " + e(p["h1"][0].lower() + p["h1"][1:]) + "</h2><ol class=\"steps\">" + \
+        title = p.get("steps_title") or "How to " + p["h1"][0].lower() + p["h1"][1:]
+        steps = "<section><h2>" + e(title) + "</h2><ol class=\"steps\">" + \
                 "".join(f"<li>{e(s)}</li>" for s in p["steps"]) + "</ol></section>"
     faqs = ""
     if p.get("faqs"):
-        faqs = '<section class="faq"><h2>Frequently asked questions</h2>' + "".join(
+        faqs = '<section class="faq"><h2>' + e(tr("Frequently asked questions")) + '</h2>' + "".join(
             f"<details><summary>{e(q)}</summary><p>{e(a)}</p></details>" for q, a in p["faqs"]) + "</section>"
-    rel = "".join(f'<li><a href="{path_for(q["slug"])}">{e(q["crumb"])}</a></li>' for q in related(p, groups))
+    rel_pages = [q for q in (lang_pages or {}).get(lang, []) if q["slug"] != p["slug"]] if lang != "en" else related(p, groups)
+    rel = "".join(f'<li><a href="{path_for(q["slug"])}">{e(q["crumb"])}</a></li>' for q in rel_pages)
     third = {"compress": "🎯 Exact size", "image": "🎯 Exact KB", "merge": "↕ Reorder", "split": "✂ Any range",
              "img2pdf": "📄 A4 / Letter", "pdf2img": "🖼 Up to 300 DPI", "dpi": "✓ Lossless", "organize": "⟳ Thumbnails",
              "pagenum": "# 4 formats", "watermark": "✎ Any text", "sign": "✍ Draw or type", "unlock": "✓ Keeps text",
              "ocr": "🔍 Built-in OCR"}.get(p.get("tool"), "")
-    badges = (f'<ul class="badges"><li>🔒 No upload</li><li>∞ No limits</li><li>{third}</li><li>✓ No sign-up</li></ul>'
+    badges = (f'<ul class="badges"><li>{tr("🔒 No upload")}</li><li>{tr("∞ No limits")}</li><li>{tr(third)}</li><li>{tr("✓ No sign-up")}</li></ul>'
               if p.get("tool") else "")
     if p.get("tool") == "compress":
         scripts = f'<script src="{assets["engine"]}" defer></script><script src="{assets["app"]}" defer></script>'
@@ -251,9 +344,22 @@ def render(p, groups, assets):
     else:
         scripts = ""
     tool_markup = "" if not p.get("tool") else tool_html(p) if p["tool"] == "compress" else render_tool(p)
+    tool_markup = localize(tool_markup, lang)
     grid = tools_grid(groups) if p["slug"] in ("", "404") else ""
+    hl = "en" if lang == "en" else LANGS[lang][2]
+    locale = "en_US" if lang == "en" else LANGS[lang][3]
+    i18n_json = ""
+    if lang != "en":
+        i18n_json = ('<script type="application/json" id="i18n">' +
+                     json.dumps(js_dict(lang), ensure_ascii=False).replace("</", "<\\/") + "</script>")
+    if lang == "en":
+        nav = ('<a href="/">Compress PDF</a><a href="/resize-image-to-20kb/">Image to 20 KB</a><a href="/photo-signature-resizer/">Exam photo</a>'
+               '<a href="/merge-pdf/">Merge</a><a href="/sign-pdf/">Sign</a><a href="/#alltools">All tools</a>')
+    else:
+        nav = "".join(f'<a href="{path_for(q["slug"])}">{e(q["crumb"])}</a>' for q in (lang_pages or {}).get(lang, [])[:4])
+        nav += f'<a href="/#alltools">{e(tr("All tools (English)"))}</a>'
     return f"""<!doctype html>
-<html lang="en">
+<html lang="{hl}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -262,7 +368,7 @@ def render(p, groups, assets):
 <link rel="canonical" href="{url}">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <meta name="theme-color" content="#e5432d">
-<meta property="og:type" content="website"><meta property="og:site_name" content="{e(SITE_NAME)}">
+<meta property="og:type" content="website"><meta property="og:site_name" content="{e(SITE_NAME)}"><meta property="og:locale" content="{locale}">
 <meta property="og:title" content="{e(p["title"])}"><meta property="og:description" content="{e(p["desc"])}">
 <meta property="og:url" content="{url}"><meta property="og:image" content="{SITE_URL}/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -270,28 +376,32 @@ def render(p, groups, assets):
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest">
 <link rel="alternate" type="text/plain" title="LLM summary" href="/llms.txt">
+{hreflang_tags(p, alts)}
+<script src="{assets["theme"]}"></script>
 {verify}
 <link rel="stylesheet" href="{assets["css"]}">
 <script type="application/ld+json">{jsonld(p, groups)}</script>
 {analytics}
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<header class="site"><div class="wrap"><a class="brand" href="/">{LOGO_SVG}{e(SITE_NAME)}</a>
-<nav class="top" aria-label="Main"><a href="/">Compress PDF</a><a href="/resize-image-to-20kb/">Image to 20 KB</a><a href="/photo-signature-resizer/">Exam photo</a><a href="/merge-pdf/">Merge</a><a href="/sign-pdf/">Sign</a><a href="/#alltools">All tools</a></nav></div></header>
+<a class="skip" href="#main">{e(tr("Skip to content"))}</a>
+<header class="site"><div class="wrap"><a class="brand" href="{home}">{LOGO_SVG}{e(SITE_NAME)}</a>
+<nav class="top" aria-label="Main">{nav}</nav>
+<div class="hdr-tools">{lang_links(p, alts)}{theme_button(lang)}</div></div></header>
 <main class="wrap" id="main">
 {crumbs}
 <div class="hero"><h1>{e(p["h1"])}</h1><p class="lead">{e(p["lead"])}</p>{badges}</div>
 {tool_markup}
 {grid}
-<section class="facts" aria-label="Key facts"><h2 style="font-size:18px;margin:4px 0 8px">Key facts</h2><ul>{facts}</ul></section>
+<section class="facts" aria-label="{e(tr("Key facts"))}"><h2 style="font-size:18px;margin:4px 0 8px">{e(tr("Key facts"))}</h2><ul>{facts}</ul></section>
 {steps}
 <section class="prose">{p["body"]}</section>
 {faqs}
-<section><h2>More free PDF tools</h2><ul class="links">{rel}</ul></section>
-<p class="updated">Last updated <time datetime="{UPDATED}">{UPDATED}</time></p>
+<section><h2>{e(tr("More free tools"))}</h2><ul class="links">{rel}</ul></section>
+<p class="updated">{e(tr("Last updated"))} <time datetime="{UPDATED}">{UPDATED}</time></p>
 </main>
-{footer(groups)}
+{footer(groups) if lang == "en" else footer_i18n(lang, (lang_pages or {}).get(lang, []))}
+{i18n_json}
 <div id="toast" role="status" hidden></div>
 {scripts}
 </body>
@@ -381,27 +491,37 @@ def main():
     assets = {"css": fingerprint(STATIC / "style.css", "style.css"),
               "engine": fingerprint(STATIC / "engine.js", "engine.js"),
               "app": fingerprint(STATIC / "app.js", "app.js"),
-              "tools": fingerprint(STATIC / "tools.js", "tools.js")}
+              "tools": fingerprint(STATIC / "tools.js", "tools.js"),
+              "theme": fingerprint(STATIC / "theme.js", "theme.js")}
     pages = all_pages()
     groups = {}
     for p in pages:
         groups.setdefault(p["group"], []).append(p)
+    tpages = i18n_pages()
+    alts, lang_pages = {}, {}
     for p in pages:
+        alts.setdefault(p["slug"], {})["en"] = p["slug"]
+    for p in tpages:
+        if p["base"] not in alts:
+            raise SystemExit(f"Translated page {p['slug']} has no English original '{p['base']}'")
+        alts[p["base"]][p["lang"]] = p["slug"]
+        lang_pages.setdefault(p["lang"], []).append(p)
+    for p in pages + tpages:
         out = DIST / p["slug"] / "index.html" if p["slug"] else DIST / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(fill_contact(render(p, groups, assets)), encoding="utf-8")
+        out.write_text(fill_contact(render(p, groups, assets, alts, lang_pages)), encoding="utf-8")
 
     nf = dict(slug="404", title="Page not found", desc="Page not found.", h1="Page not found",
               lead="That page doesn't exist — but the compressor does.", crumb="Not found", tool="compress",
               mode="recommended", facts=["Your files are compressed on your device and never uploaded."], steps=None,
               body='<p><a href="/">Go to the PDF compressor →</a></p>', faqs=[], group="legal")
-    (DIST / "404.html").write_text(fill_contact(render(nf, groups, assets)).replace(
+    (DIST / "404.html").write_text(fill_contact(render(nf, groups, assets, alts, lang_pages)).replace(
         '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">', '<meta name="robots" content="noindex">'), encoding="utf-8")
 
     (DIST / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
         "".join(f"<url><loc>{url_for(p['slug'])}</loc><lastmod>{UPDATED}</lastmod>"
-                f"<priority>{'1.0' if not p['slug'] else '0.8' if p.get('tool') else '0.6'}</priority></url>\n" for p in pages) +
+                f"<priority>{'1.0' if not p['slug'] else '0.8' if p.get('tool') else '0.6'}</priority></url>\n" for p in pages + tpages) +
         "</urlset>\n")
 
     ai_bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-User", "Claude-SearchBot", "anthropic-ai",
@@ -411,7 +531,8 @@ def main():
     robots += "".join(f"User-agent: {b}\nAllow: /\n\n" for b in ai_bots)
     robots += f"Sitemap: {SITE_URL}/sitemap.xml\n"
     (DIST / "robots.txt").write_text(robots)
-    (DIST / "llms.txt").write_text(fill_contact(llms_txt(pages), plain=True))
+    (DIST / "llms.txt").write_text(fill_contact(llms_txt(pages) + "\n## Other languages\n" + "".join(
+        f"- [{p['h1']}]({url_for(p['slug'])}) ({LANGS[p['lang']][1]})\n" for p in tpages), plain=True))
     (DIST / "llms-full.txt").write_text(fill_contact(llms_full(pages), plain=True))
     (DIST / "favicon.svg").write_text(LOGO_SVG.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '))
 
@@ -487,7 +608,7 @@ self.addEventListener('fetch', (e) => {{
     # Files that must live at the site root verbatim (e.g. search-engine verification).
     for f in (STATIC / "root").glob("*"):
         shutil.copy(f, DIST / f.name)
-    print(f"Built {len(pages)} pages → {DIST}  (SITE_URL={SITE_URL})")
+    print(f"Built {len(pages)} pages + {len(tpages)} translated → {DIST}  (SITE_URL={SITE_URL})")
     if not CONTACT:
         print("WARNING: CONTACT_EMAIL is not set — required on Contact/Privacy/Terms before going live.")
     if "example" in SITE_URL:

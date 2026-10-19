@@ -14,6 +14,7 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const baseName = (n) => n.replace(/\.[^.]+$/, '');
   const tick = () => new Promise((r) => setTimeout(r, 0));
+  const t = window.__t || ((s, v) => { if (v) for (const k in v) s = s.split('{' + k + '}').join(v[k]); return s; });
   function beacon(name, props) {
     // First-party, cookie-less usage counts. Skipped for Do-Not-Track / Global Privacy Control and local dev.
     try {
@@ -79,7 +80,7 @@
         const img = new Image(); img.src = url; await img.decode();
         return img;
       } catch (e2) {
-        if (!isHeic(file)) throw new Error('This image format is not supported by your browser.');
+        if (!isHeic(file)) throw new Error(t('This image format is not supported by your browser.'));
       } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
       try {
         await loadScript('/vendor/libheif-bundle.js'); // libheif (LGPL-3.0) compiled to WebAssembly
@@ -93,7 +94,7 @@
         g.putImageData(id, 0, 0);
         imgs.forEach((x) => x.free && x.free());
         return c;
-      } catch (e3) { throw new Error('Could not read this HEIC photo. Try exporting it as JPG from your Photos app.'); }
+      } catch (e3) { throw new Error(t('Could not read this HEIC photo. Try exporting it as JPG from your Photos app.')); }
     }
   }
   const dimsOf = (src) => ({ w: src.naturalWidth || src.width, h: src.naturalHeight || src.height });
@@ -256,8 +257,8 @@
     if (src.close) src.close();
     const res = await finish({ blob: r.blob, w: r.w, h: r.h, hit: !!best && r.blob.size <= maxB });
     if (res.blob.size > maxB) res.hit = false; // DPI metadata adds a few bytes
-    if (res.hit && minB && res.blob.size < minB) res.note = 'Below the ' + o.minLabel + ' minimum — use larger dimensions or a bigger photo.';
-    if (!res.hit) res.note = fixed ? 'Could not fit these dimensions under ' + maxLabel + ' — try smaller dimensions.' : 'Could not reach ' + maxLabel + '.';
+    if (res.hit && minB && res.blob.size < minB) res.note = t('Below the {x} minimum — use larger dimensions or a bigger photo.', { x: o.minLabel });
+    if (!res.hit) res.note = fixed ? t('Could not fit these dimensions under {x} — try smaller dimensions.', { x: maxLabel }) : t('Could not reach {x}.', { x: maxLabel });
     return res;
   }
 
@@ -305,11 +306,11 @@
     }
     onFiles = (files) => {
       const imgs = files.filter(isImg);
-      if (!imgs.length) return toast('Please choose image files (JPG, PNG, WebP…).');
+      if (!imgs.length) return toast(t('Please choose image files (JPG, PNG, WebP…).'));
       for (const f of imgs) {
         const li = document.createElement('li'); li.className = 'item';
         li.innerHTML = '<div class="item-top"><span class="name">' + esc(f.name) + '</span><span class="sizes">' + fmt(f.size) + '</span></div>' +
-          '<div class="bar"><span></span></div><div class="item-bottom"><span class="status">Waiting…</span><span class="actions"></span></div>';
+          '<div class="bar"><span></span></div><div class="item-bottom"><span class="status">' + t('Waiting…') + '</span><span class="actions"></span></div>';
         list.appendChild(li); items.push({ file: f, li });
       }
       track('images_added', { count: imgs.length });
@@ -324,7 +325,7 @@
         const { li, file } = it, st = $('.status', li), bar = $('.bar span', li), actions = $('.actions', li), sizes = $('.sizes', li);
         li.classList.remove('done', 'miss', 'err'); actions.innerHTML = ''; li.querySelector('.note') && li.querySelector('.note').remove();
         if (it.out) URL.revokeObjectURL(it.out.url);
-        st.textContent = 'Processing…'; bar.style.width = '40%';
+        st.textContent = t('Processing…'); bar.style.width = '40%';
         try {
           const r = await imageToSize(file, o);
           const ext = EXT[o.format] || '.jpg';
@@ -332,13 +333,13 @@
           it.out = { url: URL.createObjectURL(r.blob), name, blob: r.blob };
           bar.style.width = '100%';
           sizes.innerHTML = fmt(file.size) + ' → <b>' + fmt(r.blob.size) + '</b>';
-          st.textContent = (o.maxBytes ? (r.hit ? '✓ Under ' : '✗ Above ') + o.maxLabel + ' · ' : '✓ ') + r.w + '×' + r.h + ' px' + (o.dpi ? ' · ' + o.dpi + ' DPI' : '');
+          st.textContent = (o.maxBytes ? t(r.hit ? '✓ Under {x}' : '✗ Above {x}', { x: o.maxLabel }) + ' · ' : '✓ ') + r.w + '×' + r.h + ' px' + (o.dpi ? ' · ' + o.dpi + ' DPI' : '');
           li.classList.add(r.hit && !r.note ? 'done' : 'miss');
-          actions.innerHTML = '<img class="thumb" alt="Preview of ' + esc(name) + '" src="' + it.out.url + '"><a class="btn btn-sm" download="' + esc(name) + '" href="' + it.out.url + '">Download</a>';
+          actions.innerHTML = '<img class="thumb" alt="' + esc(t('Preview of {x}', { x: name })) + '" src="' + it.out.url + '"><a class="btn btn-sm" download="' + esc(name) + '" href="' + it.out.url + '">' + t('Download') + '</a>';
           if (r.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = r.note; li.appendChild(n); }
           track('image_resized', { hit: r.hit, kb: Math.round(o.maxBytes / 1000), mode: o.format + (o.lines.length ? '+text' : '') + (o.dpi ? '+dpi' : '') });
         } catch (e) {
-          li.classList.add('err'); st.textContent = e.message || 'Could not read this image.';
+          li.classList.add('err'); st.textContent = e.message || t('Could not read this image.');
         }
         await tick();
       }
@@ -358,9 +359,9 @@
       files.forEach((f, i) => {
         const li = document.createElement('li'); li.className = 'item row';
         li.innerHTML = '<span class="idx">' + (i + 1) + '</span><span class="name">' + esc(f.name) + '</span><span class="sizes">' + fmt(f.size) + '</span>' +
-          '<span class="order"><button type="button" class="icon" data-a="up" aria-label="Move ' + esc(f.name) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
-          '<button type="button" class="icon" data-a="down" aria-label="Move ' + esc(f.name) + ' down"' + (i < files.length - 1 ? '' : ' disabled') + '>↓</button>' +
-          '<button type="button" class="icon" data-a="rm" aria-label="Remove ' + esc(f.name) + '">✕</button></span>';
+          '<span class="order"><button type="button" class="icon" data-a="up" aria-label="' + esc(t('Move {x} up', { x: f.name })) + '"' + (i ? '' : ' disabled') + '>↑</button>' +
+          '<button type="button" class="icon" data-a="down" aria-label="' + esc(t('Move {x} down', { x: f.name })) + '"' + (i < files.length - 1 ? '' : ' disabled') + '>↓</button>' +
+          '<button type="button" class="icon" data-a="rm" aria-label="' + esc(t('Remove {x}', { x: f.name })) + '">✕</button></span>';
         li.addEventListener('click', (e) => {
           const a = e.target.dataset && e.target.dataset.a; if (!a) return;
           if (a === 'up') files.splice(i - 1, 0, files.splice(i, 1)[0]);
@@ -375,7 +376,7 @@
     }
     onFiles = (fs) => {
       const ok = fs.filter(accept);
-      if (!ok.length) return toast('Please choose ' + label + '.');
+      if (!ok.length) return toast(t('Please choose {x}.', { x: t(label) }));
       files.push(...ok); render();
     };
     $('#sort') && $('#sort').addEventListener('click', () => { files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })); render(); });
@@ -387,12 +388,12 @@
   }
   function showResult(html) { const r = $('#result'); r.innerHTML = html; r.hidden = false; }
 
-  function encryptedError(name) { return new Error('“' + name + '” is password-protected or encrypted. Remove the protection first.'); }
+  function encryptedError(name) { return new Error(t('“{x}” is password-protected or encrypted. Remove the protection first.', { x: name })); }
 
   function initMerge() {
     const files = orderedList(isPdf, 'PDF files');
     $('#go').addEventListener('click', async () => {
-      const btn = $('#go'); setBusy(btn, true, 'Merging…');
+      const btn = $('#go'); setBusy(btn, true, t('Merging…'));
       try {
         await PdfShrink.ready();
         const out = await PDFLib.PDFDocument.create();
@@ -407,9 +408,9 @@
         const bytes = await out.save({ useObjectStreams: true });
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
-        showResult('<p>✓ Merged ' + files.length + ' files · ' + pages + ' pages · ' + fmt(blob.size) + '</p><a class="btn" download="merged.pdf" href="' + url + '">Download merged PDF</a> <a class="btn btn-ghost" href="/">Compress it →</a>');
+        showResult('<p>' + t('✓ Merged {f} files · {p} pages', { f: files.length, p: pages }) + ' · ' + fmt(blob.size) + '</p><a class="btn" download="merged.pdf" href="' + url + '">' + t('Download merged PDF') + '</a> <a class="btn btn-ghost" href="' + t('/') + '">' + t('Compress it →') + '</a>');
         track('merged', { files: files.length, pages });
-      } catch (e) { console.error(e); showResult('<p class="error">' + esc(e.message || 'Could not merge these files.') + '</p>'); }
+      } catch (e) { console.error(e); showResult('<p class="error">' + esc(e.message || t('Could not merge these files.')) + '</p>'); }
       setBusy(btn, false);
     });
   }
@@ -485,7 +486,7 @@
     const files = orderedList(isImg, 'image files (JPG, PNG, WebP…)');
     const SIZES = { a4: [595.28, 841.89], letter: [612, 792] };
     $('#go').addEventListener('click', async () => {
-      const btn = $('#go'); setBusy(btn, true, 'Creating PDF…');
+      const btn = $('#go'); setBusy(btn, true, t('Creating PDF…'));
       try {
         await PdfShrink.ready();
         const out = await PDFLib.PDFDocument.create();
@@ -509,16 +510,16 @@
         let bytes = await out.save({ useObjectStreams: true }), note = '';
         const maxKb = parseFloat(($('#pdfmax') || {}).value);
         if (maxKb > 0 && bytes.length > maxKb * 1000) {
-          btn.textContent = 'Fitting under ' + maxKb + ' KB…';
+          btn.textContent = t('Fitting under {x} KB…', { x: maxKb });
           const r = await PdfShrink.compress(bytes, { targetBytes: Math.floor(maxKb * 1000) });
           bytes = r.bytes;
-          note = r.hit ? ' · ✓ under ' + maxKb + ' KB' : ' · ✗ could not reach ' + maxKb + ' KB — try fewer images or “Small file” quality';
+          note = ' · ' + (r.hit ? t('✓ under {x} KB', { x: maxKb }) : t('✗ could not reach {x} KB — try fewer images or “Small file” quality', { x: maxKb }));
         }
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
-        showResult('<p>✓ ' + files.length + (files.length === 1 ? ' page · ' : ' pages · ') + fmt(blob.size) + esc(note) + '</p><a class="btn" download="images.pdf" href="' + url + '">Download PDF</a>' + (maxKb > 0 ? '' : ' <a class="btn btn-ghost" href="/compress-pdf-to-100kb/">Need it smaller? →</a>'));
+        showResult('<p>✓ ' + t(files.length === 1 ? '{n} page' : '{n} pages', { n: files.length }) + ' · ' + fmt(blob.size) + esc(note) + '</p><a class="btn" download="images.pdf" href="' + url + '">' + t('Download PDF') + '</a>' + (maxKb > 0 ? '' : ' <a class="btn btn-ghost" href="' + t('/compress-pdf-to-100kb/') + '">' + t('Need it smaller? →') + '</a>'));
         track('images_to_pdf', { count: files.length, kb: maxKb || 0 });
-      } catch (e) { console.error(e); showResult('<p class="error">' + esc(e.message || 'Could not create the PDF.') + '</p>'); }
+      } catch (e) { console.error(e); showResult('<p class="error">' + esc(e.message || t('Could not create the PDF.')) + '</p>'); }
       setBusy(btn, false);
     });
   }

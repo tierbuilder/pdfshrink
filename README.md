@@ -135,6 +135,19 @@ Newer client-side competitors exist (BentoPDF, MiOffice), so privacy alone isn't
 Measure with Search Console. Expect size pages to start ranking in 4–12 weeks. Domain age and backlinks are the
 bottleneck, not on-page SEO.
 
+## Languages and theme
+
+- **Translated pages** (`content_i18n.py`): Hindi (`/hi/`), Brazilian Portuguese (`/pt/`) and Indonesian (`/id/`). These
+  are 25 pages, chosen from the countries in Search Console. Each one mirrors an English page and gets `hreflang`
+  alternates and a language switcher.
+- **Interface strings** (`i18n.py`): `UI[lang]` is keyed by the English text.
+  - Python: `tr_for(lang)` translates templates, and `localize()` translates the generated tool markup.
+  - Scripts: they read the same strings from `<script type="application/json" id="i18n">` through `window.__t`, and
+    fall back to English.
+  - `python3 -c "import i18n; print(i18n.check())"` lists any script strings that are missing a translation.
+- **Adding a language:** add it to `LANGS`, add a `UI` dict and add pages to `content_i18n.py`.
+- **Theme:** `static/theme.js` (loaded in `<head>`) applies the saved Light / Dark / System choice before first paint.
+
 ## Usage analytics (Cloudflare)
 
 - `worker/index.js` runs only for `/api/*`; every page and file is served straight from `dist/` as a static asset.

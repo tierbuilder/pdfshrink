@@ -152,3 +152,15 @@ label.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8p
 .ocr-out{width:100%;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin-top:4px}
 @media (prefers-reduced-motion:reduce){.pthumb img{transition:none}}
 .gridhead{font-size:16px;color:var(--muted);margin:20px 0 8px}
+/* header controls: theme + language */
+.hdr-tools{display:flex;align-items:center;gap:8px}
+.theme-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer;min-height:32px}
+.theme-btn:hover{border-color:var(--accent)}
+.theme-btn svg{width:16px;height:16px}
+.theme-btn .i-auto,.theme-btn .i-light,.theme-btn .i-dark{display:none}
+.theme-btn[data-mode="auto"] .i-auto,.theme-btn[data-mode="light"] .i-light,.theme-btn[data-mode="dark"] .i-dark{display:inline}
+.langs{display:flex;gap:6px;font-size:13px;flex-wrap:wrap}
+.langs a{color:var(--muted);text-decoration:none;border:1px solid transparent;border-radius:999px;padding:3px 8px}
+.langs a:hover{color:var(--ink);border-color:var(--line)}
+.langs a[aria-current="true"]{color:var(--ink);border-color:var(--line);background:var(--bg)}
+@media (max-width:600px){.theme-btn .theme-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}header.site .wrap{flex-wrap:wrap}.langs{order:3;width:100%;padding-bottom:8px}}
