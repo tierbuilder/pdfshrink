@@ -29,12 +29,28 @@ PRESETS = {
 }
 
 
+def image_focus(p):
+    """Which controls a page shows by default (Basic); everything else sits under Advanced options."""
+    img = p.get("img", {})
+    if img.get("focus"):
+        return img["focus"]
+    if img.get("text"):
+        return "text"
+    if img.get("unit", "px") != "px":
+        return "size"
+    if img.get("presets") == "exam":
+        return "presets"
+    if img.get("fmt"):
+        return "convert"
+    return "kb"
+
+
 def image_tool(p):
     target_kb = p.get("target_kb")
     img = p.get("img", {})
     fmt, unit, text = img.get("fmt", "jpg"), img.get("unit", "px"), img.get("text", False)
     presets = PRESETS[img.get("presets", "general")]
-    adv_open = " open" if img.get("open", False) or text or unit != "px" else ""
+    focus = image_focus(p)
     kb_chips = "".join(f'<button type="button" class="chip" data-kb="{k}">{k} KB</button>' for k in (10, 20, 30, 50, 100, 200))
     dim_chips = "".join(f'<button type="button" class="chip" data-w="{w}" data-h="{h}" data-unit="{u}" data-dpi="{d}"'
                         f'{f" data-kb={chr(34)}{kb}{chr(34)}" if kb else ""}>{label}</button>' for label, w, h, u, d, kb in presets)
@@ -46,29 +62,45 @@ def image_tool(p):
     q_opts = "".join(f'<option value="{v}"{sel(q, v)}>{t}</option>' for v, t in (("0.95", "High / lossless PNG"), ("0.8", "Balanced"), ("0.6", "Small file"), ("0.4", "Smallest")))
     checked = " checked" if text else ""
     label = "Photo resizer" if img.get("presets") else "Image resizer"
-    return f"""<section class="tool" id="tool" data-tool="image" data-target-kb="{target_kb or ''}" aria-label="{label}">
-{dropzone("image/*,.heic,.heif", True, 'Drop images here or <span class="link">choose files</span>', "Tap to choose images", ICON_IMG)}
-<div class="opts">
-<div class="target-row"><label for="tsize">Max size</label>
+    dpi_hint = ('<p class="muted small">DPI: 200 by default (presets set their own) — change it under Advanced options.</p>'
+                if focus == "size" else "")
+
+    # Every control is rendered exactly once — in Basic or in Advanced — so the script finds it either way.
+    block = {
+        "kb": f"""<div class="target-row"><label for="tsize">Max size</label>
 <input id="tsize" type="number" min="1" step="any" inputmode="decimal" value="{target_kb or ''}" placeholder="optional">
-<select id="tunit" aria-label="Unit"><option>KB</option><option>MB</option></select>{kb_chips}</div>
-<div class="target-row" id="quality-row"><label for="quality">Quality</label>
+<select id="tunit" aria-label="Unit"><option>KB</option><option>MB</option></select>{kb_chips}</div>""",
+        "quality": f"""<div class="target-row" id="quality-row"><label for="quality">Quality</label>
 <select id="quality">{q_opts}</select>
-<label for="fmt">Format</label><select id="fmt">{fmt_opts}</select></div>
-<details class="adv"{adv_open}><summary>Size, DPI, name &amp; date on photo</summary>
+<label for="fmt">Format</label><select id="fmt">{fmt_opts}</select></div>""",
+        "size": f"""<p class="muted small chips-line" id="dimhelp">Common sizes: {dim_chips}</p>
 <div class="target-row"><label for="iw">Width</label><input id="iw" type="number" min="0" step="any" inputmode="decimal" placeholder="auto" aria-describedby="dimhelp">
 <label for="ih">Height</label><input id="ih" type="number" min="0" step="any" inputmode="decimal" placeholder="auto">
 <select id="unit" aria-label="Size unit">{unit_opts}</select>
 <select id="fit" aria-label="Resize mode"><option value="contain">Keep proportions</option><option value="cover">Crop to exact size</option></select></div>
-<div class="target-row" id="dpi-row"><label for="dpi">DPI</label><input id="dpi" type="number" min="1" max="65535" inputmode="numeric" placeholder="{'200' if unit != 'px' else 'keep'}">
-<span class="muted small">Needed for cm/mm/inch sizes (default 200) and written into the file.</span></div>
-<p class="muted small" id="dimhelp">Examples: {dim_chips} — always use the exact numbers in your form's instructions.</p>
-<div class="target-row"><label for="tmin">Min size</label><input id="tmin" type="number" min="0" step="any" inputmode="decimal" placeholder="none"> <span class="muted">KB (if your form has a minimum)</span></div>
-<label class="check"><input type="checkbox" id="addtext"{checked}> Print name and date at the bottom of the photo</label>
+{dpi_hint}""",
+        "dpi": f"""<div class="target-row" id="dpi-row"><label for="dpi">DPI</label><input id="dpi" type="number" min="1" max="65535" inputmode="numeric" placeholder="{'200' if unit != 'px' else 'keep'}">
+<span class="muted small">Needed for cm/mm/inch sizes (default 200) and written into the file.</span></div>""",
+        "min": """<div class="target-row"><label for="tmin">Min size</label><input id="tmin" type="number" min="0" step="any" inputmode="decimal" placeholder="none"> <span class="muted">KB (if your form has a minimum)</span></div>""",
+        "text": f"""<label class="check"><input type="checkbox" id="addtext"{checked}> Print name and date at the bottom of the photo</label>
 <div class="target-row" id="text-row"><label for="tname">Name</label><input id="tname" type="text" autocomplete="name" style="width:200px" maxlength="60">
 <label for="tdate">Date</label><input id="tdate" type="date">
-<select id="tdfmt" aria-label="Date format"><option value="dmy">DD-MM-YYYY</option><option value="dmy/">DD/MM/YYYY</option><option value="dmy.">DD.MM.YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="ymd">YYYY-MM-DD</option></select></div>
-</details>
+<select id="tdfmt" aria-label="Date format"><option value="dmy">DD-MM-YYYY</option><option value="dmy/">DD/MM/YYYY</option><option value="dmy.">DD.MM.YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="ymd">YYYY-MM-DD</option></select></div>""",
+    }
+    basic_keys = {"kb": ["kb"], "size": ["size"], "presets": ["size", "kb"], "text": ["text", "kb"],
+                  "convert": ["quality"]}[focus]
+    order = ["text", "size", "kb", "quality", "dpi", "min"]
+    basic = "\n".join(block[k] for k in order if k in basic_keys)
+    advanced = "\n".join(block[k] for k in order if k not in basic_keys)
+    return f"""<section class="tool" id="tool" data-tool="image" data-focus="{focus}" data-target-kb="{target_kb or ''}" aria-label="{label}">
+{dropzone("image/*,.heic,.heif", True, 'Drop images here or <span class="link">choose files</span>', "Tap to choose images", ICON_IMG)}
+<div class="opts">
+{basic}
+<details class="adv adv-remember"><summary>Advanced options</summary>
+<div class="adv-body">
+{advanced}
+<p class="muted small">Always follow the exact numbers in your form's instructions.</p>
+</div></details>
 </div>
 <ul class="files" id="files" aria-live="polite"></ul>
 <div class="after"><button type="button" class="btn btn-ghost btn-sm" id="rerun" hidden>Apply new settings</button></div>
@@ -258,6 +290,13 @@ def scan_tool(preset="natural"):
 <p class="sc-file"><strong id="sc-file"></strong></p>
 <div class="seg sc-presets" role="radiogroup" aria-label="Scan style">{pre}</div>
 <div class="sc-layout">
+<div class="sc-view">
+<div class="sc-viewbar"><label for="sc-page" class="sr-only">Preview page</label><select id="sc-page"></select>
+<label class="check sc-inline"><input type="checkbox" id="sc-compare"> Show original</label>
+<button type="button" class="btn btn-ghost btn-sm" id="sc-shuffle" title="New random tilt and grain">🎲 Re-roll</button></div>
+<div class="sc-canvases"><canvas id="sc-before" hidden aria-label="Original page"></canvas><canvas id="sc-preview" aria-label="Scanned preview"></canvas></div>
+</div>
+<details class="adv adv-remember sc-adv"><summary>Advanced: fine-tune the look</summary>
 <div class="sc-controls">
 <div class="sc-field"><label for="sc-color">Colour</label><select id="sc-color"><option value="gray">Grayscale</option><option value="bw">Black &amp; white (photocopy)</option><option value="color">Colour</option></select></div>
 {rng("rotate", "Tilt", 0, 3, 0.1, "°")}
@@ -270,13 +309,7 @@ def scan_tool(preset="natural"):
 <label class="check"><input type="checkbox" id="sc-edge"> Scanner edge shadow</label>
 <div class="sc-field"><label for="sc-dpi">Resolution</label><select id="sc-dpi"><option value="110">110 DPI (smallest)</option><option value="150">150 DPI (standard)</option><option value="200">200 DPI (sharp)</option><option value="300">300 DPI (print)</option></select></div>
 <div class="sc-field"><label for="sc-quality">File size</label><select id="sc-quality"><option value="0.5">Small</option><option value="0.62">Balanced</option><option value="0.8">High quality</option></select></div>
-</div>
-<div class="sc-view">
-<div class="sc-viewbar"><label for="sc-page" class="sr-only">Preview page</label><select id="sc-page"></select>
-<label class="check sc-inline"><input type="checkbox" id="sc-compare"> Show original</label>
-<button type="button" class="btn btn-ghost btn-sm" id="sc-shuffle" title="New random tilt and grain">🎲 Re-roll</button></div>
-<div class="sc-canvases"><canvas id="sc-before" hidden aria-label="Original page"></canvas><canvas id="sc-preview" aria-label="Scanned preview"></canvas></div>
-</div>
+</div></details>
 </div>
 <div class="bulk"><button type="button" class="btn" id="sc-go">Make it look scanned</button></div>
 <div class="result" id="result" aria-live="polite" hidden></div>

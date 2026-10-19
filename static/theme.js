@@ -23,6 +23,12 @@
       menus.forEach((d) => { if (d.open) { d.open = false; d.querySelector('summary').focus(); } });
     });
 
+    // "Advanced options" panels: remember whether the visitor likes them open.
+    document.querySelectorAll('details.adv-remember').forEach((d) => {
+      try { if (localStorage.getItem('adv-open') === '1') d.open = true; } catch (e) { /* ignore */ }
+      d.addEventListener('toggle', () => { try { localStorage.setItem('adv-open', d.open ? '1' : '0'); } catch (e) { /* ignore */ } });
+    });
+
     const btn = document.getElementById('theme-toggle');
     if (!btn) return;
     const order = ['auto', 'light', 'dark'];
