@@ -516,7 +516,7 @@
         }
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
-        showResult('<p>✓ ' + files.length + ' pages · ' + fmt(blob.size) + esc(note) + '</p><a class="btn" download="images.pdf" href="' + url + '">Download PDF</a>' + (maxKb > 0 ? '' : ' <a class="btn btn-ghost" href="/compress-pdf-to-100kb/">Need it smaller? →</a>'));
+        showResult('<p>✓ ' + files.length + (files.length === 1 ? ' page · ' : ' pages · ') + fmt(blob.size) + esc(note) + '</p><a class="btn" download="images.pdf" href="' + url + '">Download PDF</a>' + (maxKb > 0 ? '' : ' <a class="btn btn-ghost" href="/compress-pdf-to-100kb/">Need it smaller? →</a>'));
         track('images_to_pdf', { count: files.length, kb: maxKb || 0 });
       } catch (e) { console.error(e); showResult('<p class="error">' + esc(e.message || 'Could not create the PDF.') + '</p>'); }
       setBusy(btn, false);

@@ -760,8 +760,8 @@ and the size limit at the top — the tool handles both at once.</p>
     ),
     dict(
         slug="merge-pdf", tool="merge", crumb="Merge PDF",
-        title="Merge PDF Files Online Free — Combine PDFs, No Upload",
-        desc="Combine multiple PDFs into one in seconds. Reorder files, keep links and text. Free, unlimited, runs in your browser — nothing is uploaded.",
+        title="Merge PDF Online Free — No Size Limit, No Upload",
+        desc="Combine PDFs into one with no file size or file count limit. Reorder files, keep links and text. Free, runs in your browser — nothing is uploaded.",
         h1="Merge PDF files",
         lead="Combine PDFs into one document in the order you choose — privately, on your device.",
         facts=["Combine any number of PDFs; reorder with the ↑ ↓ buttons or sort by name.",
@@ -774,7 +774,8 @@ and the size limit at the top — the tool handles both at once.</p>
 <p>Application portals often want everything in one file under a size limit. Merge your documents here, then use
 <a href="/compress-pdf-to-200kb/">Compress PDF to 200 KB</a> (or any size) on the merged file.</p>
 """,
-        faqs=[("Will merging reduce quality?", "No. Pages are copied without re-encoding."),
+        faqs=[("Is there a size limit for merging?", "No fixed limit. Files are merged on your own device, so the only limit is its memory — hundreds of MB work on most computers. Most online mergers cap free files at 25–100 MB because they upload them."),
+              ("Will merging reduce quality?", "No. Pages are copied without re-encoding."),
               ("Can I merge password-protected PDFs?", "Not directly — remove the password first in a PDF reader you're authorised to use."), FAQ_PRIVACY],
         group="tool",
     ),
@@ -800,11 +801,12 @@ and the size limit at the top — the tool handles both at once.</p>
     ),
     dict(
         slug="jpg-to-pdf", tool="img2pdf", crumb="JPG to PDF",
-        title="JPG to PDF Converter Free — Images to PDF, No Upload",
-        desc="Convert JPG, PNG and phone photos into one PDF. A4, Letter or fit-to-image pages, adjustable margins. Free, private, in your browser.",
+        title="JPG to PDF Converter Free — Unlimited Pages, No Upload",
+        desc="Convert JPG, PNG and phone photos into one PDF — 40, 100 or more pages, no limit. A4, Letter or fit-to-image pages. Free, private, in your browser.",
         h1="Convert JPG & images to PDF",
         lead="Turn photos, scans and screenshots into a single, tidy PDF — in your chosen order and page size.",
-        facts=["Supports JPG, PNG, WebP, GIF and (in Safari) HEIC.",
+        facts=["No page limit: combine 40, 100 or more images into one PDF, free.",
+               "Supports JPG, PNG, WebP, GIF and iPhone HEIC photos.",
                "A4, US Letter or same-as-image page sizes; landscape images get landscape pages.",
                "Phone photo rotation (EXIF) is applied automatically.",
                "Runs locally; your images are never uploaded."],
@@ -813,8 +815,15 @@ and the size limit at the top — the tool handles both at once.</p>
 <h2>Photos of documents → one PDF</h2>
 <p>Photographed your documents on your phone? Put them into one PDF here, then use
 <a href="/compress-pdf-to-100kb/">Compress PDF to 100 KB</a> if a form needs it smaller.</p>
+<h2>Need the PDF under a size limit?</h2>
+<p>Set “Max PDF size”, or open a ready-made page:
+<a href="/jpg-to-pdf-under-20kb/">20 KB</a> · <a href="/jpg-to-pdf-under-40kb/">40 KB</a> · <a href="/jpg-to-pdf-under-50kb/">50 KB</a> ·
+<a href="/jpg-to-pdf-under-100kb/">100 KB</a> · <a href="/jpg-to-pdf-under-200kb/">200 KB</a> · <a href="/jpg-to-pdf-under-300kb/">300 KB</a> ·
+<a href="/jpg-to-pdf-under-500kb/">500 KB</a> · <a href="/jpg-to-pdf-under-1mb/">1 MB</a>.</p>
 """,
-        faqs=[("Why is my photo sideways in other converters?", "Phones store rotation as metadata. We apply it before creating the PDF, so pages come out upright."), FAQ_PRIVACY],
+        faqs=[("How many images can I convert at once?", "There's no fixed limit — 40, 100 or more images work. Very large batches just take longer and depend on your device's memory."),
+              ("Can I make the PDF smaller than a limit?", "Yes. Use JPG to PDF under 50 KB, 100 KB, 200 KB and similar pages, or fill in “Max PDF size”."),
+              ("Why is my photo sideways in other converters?", "Phones store rotation as metadata. We apply it before creating the PDF, so pages come out upright."), FAQ_PRIVACY],
         group="tool",
     ),
     dict(
@@ -1091,15 +1100,25 @@ NEW_TOOLS = [
            "Your photo is never uploaded."],
           ["Drop a well-lit, front-facing photo with a plain background.", "Pick a preset (or enter your size).", "Download the JPG."],
           """
+<h2>Passport photo width and height (cm, mm, inches and pixels)</h2>
+<div class="tablewrap"><table><thead><tr><th>Size (width × height)</th><th>In inches</th><th>Pixels at 200 DPI</th><th>Pixels at 300 DPI</th><th>Commonly used for</th></tr></thead><tbody>
+<tr><td>3.5 × 4.5 cm (35 × 45 mm)</td><td>1.38 × 1.77 in</td><td>276 × 354</td><td>413 × 531</td><td>India, UK, Schengen and many other countries</td></tr>
+<tr><td>2 × 2 in (51 × 51 mm)</td><td>2 × 2 in</td><td>400 × 400</td><td>600 × 600</td><td>US passport and visa</td></tr>
+<tr><td>3.3 × 4.8 cm (33 × 48 mm)</td><td>1.30 × 1.89 in</td><td>260 × 378</td><td>390 × 567</td><td>China visa</td></tr>
+<tr><td>5 × 7 cm</td><td>1.97 × 2.76 in</td><td>394 × 551</td><td>591 × 827</td><td>Some application forms</td></tr>
+</tbody></table></div>
+<p class="muted small">Pixels = size in inches × DPI (1 inch = 2.54 cm). Rules change — always confirm the size with the
+official guidelines for your application.</p>
 <h2>Before you start</h2>
 <p>Official passport and visa photos have strict rules on background colour, head size, expression and age of the
 photo. This tool handles size and file format; check the issuing authority's photo guidelines for everything else,
 and use a professional studio where the authority requires one.</p>
 """,
-          [("Is this an official passport photo service?", "No. It's an independent resizing tool. Requirements vary by country and application — always follow the official guidelines."), FAQ_IMG_PRIVACY],
+          [("What is the width and height of a passport size photo?", "The most common size is 3.5 cm wide × 4.5 cm high (35 × 45 mm), which is 413 × 531 pixels at 300 DPI. The US uses 2 × 2 inches (600 × 600 pixels at 300 DPI)."),
+           ("Is this an official passport photo service?", "No. It's an independent resizing tool. Requirements vary by country and application — always follow the official guidelines."), FAQ_IMG_PRIVACY],
           "form", img=dict(presets="passport", unit="cm")),
     _tool("change-image-dpi", "dpi", "Change image DPI",
-          "Change Image DPI Online — 72, 200, 300 DPI Free",
+          "Change Image DPI Online (DPI Changer) — 72, 200, 300 DPI",
           "Set the DPI of a JPG or PNG to 72, 150, 200, 300 or any value without changing its pixels or quality. Free, instant, no upload.",
           "Change image DPI",
           "Set a photo's DPI (dots per inch) to the value a form or printer asks for — without touching a single pixel.",
@@ -1114,7 +1133,10 @@ and use a professional studio where the authority requires one.</p>
 photo is 2 × 2 inches at 300 DPI, or about 8.3 × 8.3 inches at 72 DPI — the pixels are identical. If you need a
 specific physical size, use <a href="/resize-image-in-cm/">Resize in cm</a> instead, which sets both pixels and DPI.</p>
 """,
-          [("Does changing DPI reduce quality?", "No. Only the stored DPI value changes; the image data is untouched."), FAQ_IMG_PRIVACY],
+          [("How do I change the DPI of a photo to 200 or 300?", "Drop the photo, type 200 or 300 (or tap a preset) and download. The DPI is changed instantly without re-saving the image."),
+           ("Does changing DPI reduce quality?", "No. Only the stored DPI value changes; the image data is untouched."),
+           ("Why does my form say the DPI is wrong?", "Phones usually save photos at 72 DPI. Many forms ask for 200 or 300 DPI — changing it here fixes that. If the form also gives a size in cm, use Resize in cm so the pixels match too."),
+           FAQ_IMG_PRIVACY],
           "image"),
     _tool("jpg-to-pdf-under-100kb", "img2pdf", "JPG to PDF under 100 KB",
           "JPG to PDF Under 100 KB — Combine Images, Exact Size",
@@ -1322,6 +1344,62 @@ Photos shared by AirDrop or email can also be sent as JPG automatically.</p>
           "image", ocr_images=True),
 ]
 
+
+
+# ---------------------------------------------------------------- JPG → PDF under X KB
+DOC_PHOTO_COST = [  # one A4 page made from a phone photo/scan, after good compression (KB)
+    ("Photo of a text document, grayscale", 15, 60),
+    ("Photo of a certificate or ID in colour", 40, 120),
+    ("Ordinary photo (people, places)", 80, 250),
+]
+IMG2PDF_WHO = {
+    20: "Portals that want a one-page document as a tiny PDF — signatures, declarations or a single ID side.",
+    40: "Forms that ask for small PDFs such as one-page certificates or ID proof — a very common limit on application portals.",
+    50: "ID proofs, caste and income certificates or a single marksheet uploaded as PDF.",
+    300: "Multi-page bundles: marksheets for several semesters, experience letters or a short project.",
+    500: "Larger application bundles, claim documents and multi-page scans that must stay sharp.",
+    1024: "Job portals, HR systems and email — several pages of photos at good quality.",
+}
+
+
+def img2pdf_page(kb):
+    L, s = kb_label(kb), kb_slug(kb)
+    eff = kb // 1024 * 1000 if kb >= 1024 and kb % 1024 == 0 else kb
+    rows = ""
+    for label, lo, hi in DOC_PHOTO_COST:
+        rng, verdict = _fit_range(eff, lo, hi)
+        rows += f"<tr><td>{label}</td><td>{lo}–{hi} KB</td><td>{rng}</td><td>{verdict}</td></tr>"
+    return _tool(
+        f"jpg-to-pdf-under-{s}", "img2pdf", f"JPG to PDF under {L}",
+        f"JPG to PDF Under {L} — Image to PDF Converter, Exact Size",
+        f"Convert photos or scans into one PDF under {L}. Add any number of images, order pages, A4 or Letter. Free and private — nothing is uploaded.",
+        f"JPG to PDF under {L}",
+        f"Turn your photos or scanned pages into a single PDF that fits {L} — the image-to-PDF and compress steps in one.",
+        [f"Combines images into one PDF, then compresses it to fit {L} automatically.",
+         "Counts 1 KB as 1000 bytes, so the file passes either convention.",
+         "Works with JPG, PNG, WebP and iPhone HEIC photos; rotation is fixed automatically.",
+         "Runs in your browser — your documents are never uploaded."],
+        ["Drop your images (document pages, ID front and back…).", f"Put them in order; {L} is already set.", "Click “Create PDF” and download."],
+        f"""
+<h2>Who needs an image PDF under {L}?</h2>
+<p>{IMG2PDF_WHO[kb]}</p>
+<h2>How many photos fit in {L}?</h2>
+<div class="tablewrap"><table><thead><tr><th>Each page is…</th><th>Size per page</th><th>Pages that fit</th><th>Realistic?</th></tr></thead>
+<tbody>{rows}</tbody></table></div>
+<p class="muted small">Estimates for cropped A4/Letter pages at readable quality. The tool always tells you whether it reached {L}.</p>
+<h2>Tips</h2>
+<ul><li>Crop each photo to the paper's edges before adding it — background wastes bytes.</li>
+<li>Choose “Small file” quality for text documents.</li>
+<li>Only include the pages the form asks for; every page shares the same {L}.</li></ul>
+""",
+        [(f"Can I convert JPG to PDF under {L} for free?", f"Yes — free, no sign-up and no watermark. Add your images, keep {L} as the limit and download."),
+         ("What if it can't reach the size?", "You'll see a message. Use fewer pages, crop the photos or choose “Small file” quality and try again."),
+         FAQ_IMG_PRIVACY],
+        "form", pdf_max_kb=eff, group="img")
+
+
+IMG2PDF_SIZES = [20, 40, 50, 300, 500, 1024]
+
 _orig_all_pages = all_pages
 
 
@@ -1329,6 +1407,9 @@ def all_pages():
     pages = _orig_all_pages()
     i = max(k for k, p in enumerate(pages) if p.get("group") == "tool") + 1
     pages[i:i] = NEW_TOOLS
-    for p in NEW_TOOLS:
+    j = max(k for k, p in enumerate(pages) if p.get("group") == "img") + 1
+    extra = [img2pdf_page(k) for k in IMG2PDF_SIZES]
+    pages[j:j] = extra
+    for p in NEW_TOOLS + extra:
         p.setdefault("mode", "recommended")
     return pages
