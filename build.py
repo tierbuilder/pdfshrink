@@ -523,10 +523,21 @@ def main():
     (DIST / "404.html").write_text(fill_contact(render(nf, groups, assets, alts, lang_pages)).replace(
         '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">', '<meta name="robots" content="noindex">'), encoding="utf-8")
 
+    def sitemap_alts(p):
+        """hreflang alternates for pages that exist in more than one language."""
+        mine = alts.get(p.get("base", p["slug"]), {})
+        if len(mine) < 2:
+            return ""
+        links = "".join(f'<xhtml:link rel="alternate" hreflang="{"en" if c == "en" else LANGS[c][2]}" href="{url_for(sl)}"/>'
+                        for c, sl in mine.items())
+        return links + f'<xhtml:link rel="alternate" hreflang="x-default" href="{url_for(mine["en"])}"/>'
+
     (DIST / "sitemap.xml").write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-        "".join(f"<url><loc>{url_for(p['slug'])}</loc><lastmod>{UPDATED}</lastmod>"
-                f"<priority>{'1.0' if not p['slug'] else '0.8' if p.get('tool') else '0.6'}</priority></url>\n" for p in pages + tpages) +
+        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+        "".join(f"<url><loc>{url_for(p['slug'])}</loc><lastmod>{UPDATED}</lastmod>{sitemap_alts(p)}"
+                f"<priority>{'1.0' if p['slug'] in ('', 'hi', 'pt', 'id') else '0.8' if p.get('tool') else '0.6'}</priority></url>\n"
+                for p in pages + tpages) +
         "</urlset>\n")
 
     ai_bots = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-User", "Claude-SearchBot", "anthropic-ai",
