@@ -42,7 +42,8 @@ UI = {
     # ------------------------------------------------------------------ Hindi
     "hi": {
         # page chrome
-        "Skip to content": "मुख्य सामग्री पर जाएँ", "Home": "होम", "Key facts": "मुख्य बातें",
+        "Skip to content": "मुख्य सामग्री पर जाएँ",
+        "Scrollable table": "स्क्रॉल होने वाली तालिका", "Menu": "मेन्यू", "Tools": "टूल", "PDF tools": "PDF टूल", "Image tools": "इमेज टूल", "For online forms": "ऑनलाइन फ़ॉर्म के लिए", "Popular sizes": "लोकप्रिय साइज़", "All tools": "सभी टूल", "Home": "होम", "Key facts": "मुख्य बातें",
         "Frequently asked questions": "अक्सर पूछे जाने वाले सवाल", "More free tools": "और मुफ़्त टूल",
         "Last updated": "आख़िरी अपडेट", "All tools (English)": "सभी टूल (English)", "Language": "भाषा",
         "🔒 No upload": "🔒 कोई अपलोड नहीं", "∞ No limits": "∞ कोई लिमिट नहीं", "✓ No sign-up": "✓ साइन-अप नहीं",
@@ -159,7 +160,8 @@ UI = {
     },
     # ------------------------------------------------------------------ Brazilian Portuguese
     "pt": {
-        "Skip to content": "Pular para o conteúdo", "Home": "Início", "Key facts": "Principais pontos",
+        "Skip to content": "Pular para o conteúdo",
+        "Scrollable table": "Tabela com rolagem", "Menu": "Menu", "Tools": "Ferramentas", "PDF tools": "Ferramentas de PDF", "Image tools": "Ferramentas de imagem", "For online forms": "Para formulários", "Popular sizes": "Tamanhos populares", "All tools": "Todas as ferramentas", "Home": "Início", "Key facts": "Principais pontos",
         "Frequently asked questions": "Perguntas frequentes", "More free tools": "Mais ferramentas grátis",
         "Last updated": "Atualizado em", "All tools (English)": "Todas as ferramentas (inglês)", "Language": "Idioma",
         "🔒 No upload": "🔒 Sem upload", "∞ No limits": "∞ Sem limites", "✓ No sign-up": "✓ Sem cadastro",
@@ -258,7 +260,8 @@ UI = {
     },
     # ------------------------------------------------------------------ Indonesian
     "id": {
-        "Skip to content": "Langsung ke konten", "Home": "Beranda", "Key facts": "Poin penting",
+        "Skip to content": "Langsung ke konten",
+        "Scrollable table": "Tabel yang bisa digeser", "Menu": "Menu", "Tools": "Alat", "PDF tools": "Alat PDF", "Image tools": "Alat gambar", "For online forms": "Untuk formulir online", "Popular sizes": "Ukuran populer", "All tools": "Semua alat", "Home": "Beranda", "Key facts": "Poin penting",
         "Frequently asked questions": "Pertanyaan umum", "More free tools": "Alat gratis lainnya", "Last updated": "Terakhir diperbarui",
         "All tools (English)": "Semua alat (bahasa Inggris)", "Language": "Bahasa",
         "🔒 No upload": "🔒 Tanpa upload", "∞ No limits": "∞ Tanpa batas", "✓ No sign-up": "✓ Tanpa daftar",

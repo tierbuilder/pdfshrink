@@ -16,7 +16,7 @@ from pathlib import Path
 
 import re
 
-from content import all_pages, kb_label
+from content import all_pages, kb_label, kb_slug
 from content_i18n import i18n_pages
 from i18n import LANGS, UI, js_dict, tr_for
 from tools_html import render_tool
@@ -257,18 +257,78 @@ def theme_button(lang):
             f'<span class="theme-text">{e(a)}</span></button>')
 
 
+CHEV = ('<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" '
+        'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+GLOBE = ('<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+         '<path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>')
+BURGER = ('<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path class="b-open" d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+          '<path class="b-close" d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>')
+
+
 def lang_links(p, alts):
-    """Language switcher: link to this page in each language, else to that language's home."""
+    """Language dropdown: links to this page in each language, else to that language's home."""
     cur = p.get("lang", "en")
     mine = alts.get(p.get("base", p["slug"]), {})
-    out = []
+    items = []
     for code in ["en", *LANGS]:
         target = mine.get(code, "" if code == "en" else code)
         hl = "en" if code == "en" else LANGS[code][2]
         current = ' aria-current="true"' if code == cur else ""
-        out.append(f'<a href="{path_for(target)}" hreflang="{hl}" lang="{hl}"{current}>{LANG_LINK_NAMES[code]}</a>')
+        items.append(f'<a href="{path_for(target)}" hreflang="{hl}" lang="{hl}"{current}>{LANG_LINK_NAMES[code]}</a>')
     label = tr_for(cur)("Language")
-    return f'<nav class="langs" aria-label="{e(label)}">{"".join(out)}</nav>'
+    return (f'<details class="dd dd-lang"><summary aria-label="{e(label)}: {LANG_LINK_NAMES[cur]}">{GLOBE}'
+            f'<span class="lang-cur">{LANG_LINK_NAMES[cur]}</span>{CHEV}</summary>'
+            f'<div class="dd-panel dd-right" role="group" aria-label="{e(label)}">{"".join(items)}</div></details>')
+
+
+def menu_sections(lang, groups, lang_pages):
+    """[(title, [(column title or None, [(href, label), ...]), ...]), ...] for the header menus."""
+    tr = tr_for(lang)
+    if lang != "en":
+        pages = lang_pages.get(lang, [])
+        return [(tr("Tools"), [(None, [(path_for(q["slug"]), q["crumb"]) for q in pages])])]
+    tools = groups["tool"]
+    link = lambda q: (path_for(q["slug"]), q["crumb"])
+    pdf = [("/", "Compress PDF")] + [link(q) for q in tools if cat_of(q) == "pdf"]
+    img = [link(q) for q in tools if cat_of(q) == "image"]
+    form = [link(q) for q in tools if cat_of(q) == "form"]
+    pdf_sizes = [(path_for(f"compress-pdf-to-{kb_slug(k)}"), f"PDF to {kb_label(k)}") for k in (50, 100, 200, 500, 1024)]
+    img_sizes = [(f"/resize-image-to-{k}kb/", f"Image to {k} KB") for k in (20, 50, 100, 200)]
+    return [("PDF tools", [(None, pdf), ("Popular sizes", pdf_sizes)]),
+            ("Image tools", [(None, img), ("Popular sizes", img_sizes)]),
+            ("For online forms", [(None, form)])]
+
+
+def site_header(p, groups, alts, lang_pages, home):
+    lang = p.get("lang", "en")
+    tr = tr_for(lang)
+    here = path_for(p["slug"])
+    sections = menu_sections(lang, groups, lang_pages)
+
+    def cols(columns, wide):
+        out = ""
+        for title, links in columns:
+            head = f'<p class="dd-h">{e(tr(title))}</p>' if title else ""
+            cur = ' aria-current="page"'
+            items = "".join(f'<a href="{h}"{cur if h == here else ""}>{e(t)}</a>' for h, t in links)
+            cls = "dd-col dd-col-2" if wide and len(links) > 7 else "dd-col"
+            out += f'<div class="{cls}">{head}<div class="dd-links">{items}</div></div>'
+        return out
+
+    all_label = tr("All tools") if lang == "en" else tr("All tools (English)")
+    desktop = "".join(f'<details class="dd"><summary>{e(tr(t))}{CHEV}</summary>'
+                      f'<div class="dd-panel{" dd-mega" if len(c) > 1 or len(c[0][1]) > 7 else ""}">{cols(c, True)}</div></details>'
+                      for t, c in sections)
+    desktop += f'<a class="menu-link" href="/#alltools">{e(all_label)}</a>'
+    mobile = "".join(f'<div class="m-sec"><p class="dd-h">{e(tr(t))}</p>{cols(c, False)}</div>' for t, c in sections)
+    mobile += f'<a class="m-all" href="/#alltools">{e(all_label)} →</a>'
+    return f"""<header class="site"><div class="wrap">
+<a class="brand" href="{home}">{LOGO_SVG}{e(SITE_NAME)}</a>
+<nav class="menu" aria-label="Main">{desktop}</nav>
+<div class="hdr-tools">{lang_links(p, alts)}{theme_button(lang)}
+<details class="dd dd-burger"><summary aria-label="{e(tr("Menu"))}">{BURGER}</summary>
+<nav class="dd-panel dd-full" aria-label="{e(tr("Menu"))}">{mobile}</nav></details></div>
+</div></header>"""
 
 
 def hreflang_tags(p, alts):
@@ -357,12 +417,6 @@ def render(p, groups, assets, alts=None, lang_pages=None):
     if lang != "en":
         i18n_json = ('<script type="application/json" id="i18n">' +
                      json.dumps(js_dict(lang), ensure_ascii=False).replace("</", "<\\/") + "</script>")
-    if lang == "en":
-        nav = ('<a href="/">Compress PDF</a><a href="/resize-image-to-20kb/">Image to 20 KB</a><a href="/photo-signature-resizer/">Exam photo</a>'
-               '<a href="/merge-pdf/">Merge</a><a href="/sign-pdf/">Sign</a><a href="/#alltools">All tools</a>')
-    else:
-        nav = "".join(f'<a href="{path_for(q["slug"])}">{e(q["crumb"])}</a>' for q in (lang_pages or {}).get(lang, [])[:4])
-        nav += f'<a href="/#alltools">{e(tr("All tools (English)"))}</a>'
     return f"""<!doctype html>
 <html lang="{hl}">
 <head>
@@ -390,9 +444,7 @@ def render(p, groups, assets, alts=None, lang_pages=None):
 </head>
 <body>
 <a class="skip" href="#main">{e(tr("Skip to content"))}</a>
-<header class="site"><div class="wrap"><a class="brand" href="{home}">{LOGO_SVG}{e(SITE_NAME)}</a>
-<nav class="top" aria-label="Main">{nav}</nav>
-<div class="hdr-tools">{lang_links(p, alts)}{theme_button(lang)}</div></div></header>
+{site_header(p, groups, alts, lang_pages or {}, home)}
 <main class="wrap" id="main">
 {crumbs}
 <div class="hero"><h1>{e(p["h1"])}</h1><p class="lead">{e(p["lead"])}</p>{badges}</div>
@@ -514,7 +566,11 @@ def main():
     for p in pages + tpages:
         out = DIST / p["slug"] / "index.html" if p["slug"] else DIST / "index.html"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(fill_contact(render(p, groups, assets, alts, lang_pages)), encoding="utf-8")
+        html_ = render(p, groups, assets, alts, lang_pages)
+        # Tables can scroll sideways on phones: make each scroll area reachable by keyboard (WCAG 2.1.1).
+        html_ = html_.replace('<div class="tablewrap">', '<div class="tablewrap" tabindex="0" role="region" aria-label="' +
+                              e(tr_for(p.get("lang", "en"))("Scrollable table")) + '">')
+        out.write_text(fill_contact(html_), encoding="utf-8")
 
     nf = dict(slug="404", title="Page not found", desc="Page not found.", h1="Page not found",
               lead="That page doesn't exist — but the compressor does.", crumb="Not found", tool="compress",

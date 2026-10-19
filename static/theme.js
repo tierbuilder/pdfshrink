@@ -1,5 +1,6 @@
-/* Theme: "auto" (follow the system), "light" or "dark". Loaded in <head> (not deferred) so the
- * saved choice applies before first paint — no flash of the wrong theme. */
+/* Site chrome. Theme: "auto" (follow the system), "light" or "dark" — loaded in <head> (not deferred)
+ * so the saved choice applies before first paint. Header menus are <details> disclosures (work without
+ * JS); this script only closes them on outside click / Escape and keeps one open at a time. */
 (function () {
   'use strict';
   const KEY = 'theme';
@@ -12,6 +13,16 @@
   apply(get());
 
   document.addEventListener('DOMContentLoaded', () => {
+    const menus = Array.from(document.querySelectorAll('header.site details.dd'));
+    menus.forEach((d) => d.addEventListener('toggle', () => {
+      if (d.open) menus.forEach((o) => { if (o !== d) o.open = false; });
+    }));
+    document.addEventListener('click', (e) => menus.forEach((d) => { if (d.open && !d.contains(e.target)) d.open = false; }));
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      menus.forEach((d) => { if (d.open) { d.open = false; d.querySelector('summary').focus(); } });
+    });
+
     const btn = document.getElementById('theme-toggle');
     if (!btn) return;
     const order = ['auto', 'light', 'dark'];
